@@ -1,0 +1,895 @@
+# TinkClaw API & Integration Guide
+
+**Quant Intelligence for Trading Bots**
+
+TinkClaw delivers fractal regime detection, information flow analysis, and multi-signal confluence scoring via REST. Plug into your existing data pipeline and start making smarter trades.
+
+- **Website**: [tinkclaw.com](https://tinkclaw.com)
+- **Base URL**: `https://api.tinkclaw.com/v1`
+- **Authentication**: API key via `X-API-Key` header
+
+---
+
+## Table of Contents
+
+1. [Quick Start](#quick-start)
+2. [Authentication](#authentication)
+3. [Rate Limits](#rate-limits)
+4. [Endpoints](#endpoints)
+   - [Trading Signals](#get-v1signals)
+   - [ML-Enhanced Signals](#get-v1signals-ml)
+   - [Market Analysis](#get-v1analysis)
+   - [Market Summary](#get-v1market-summary)
+   - [Quantitative Analysis](#get-v1quant)
+   - [Technical Indicators](#get-v1indicators)
+   - [Risk Metrics](#get-v1quantrisk-metrics)
+   - [Hurst History](#get-v1quanthurst-history)
+   - [Price Charts](#get-v1quantprice-chart)
+   - [Correlation Matrix](#get-v1quantcorrelation)
+   - [Asset Screener](#get-v1screener)
+   - [News Feed](#get-v1news)
+   - [Global Indices](#get-v1indices)
+   - [Backtesting](#post-v1backtest)
+   - [Confluence Score](#get-v1confluence)
+5. [Integration Examples](#integration-examples)
+6. [Error Handling](#error-handling)
+7. [SDKs & Libraries](#sdks--libraries)
+8. [FAQ](#faq)
+
+---
+
+## Quick Start
+
+Get your first signal in under 60 seconds.
+
+### 1. Get an API Key
+
+Sign up at [tinkclaw.com](https://tinkclaw.com) — the Developer tier is free (50 calls/day).
+
+### 2. Make Your First Request
+
+```bash
+curl -H "X-API-Key: YOUR_KEY" \
+  "https://api.tinkclaw.com/v1/signals?symbols=BTC,ETH"
+```
+
+### 3. Parse the Response
+
+```json
+{
+  "signals": [
+    {
+      "symbol": "BTC",
+      "signal": "BUY",
+      "confidence": 78,
+      "price": 68087.76,
+      "target": 74896.54,
+      "stop_loss": 64683.37,
+      "rsi": 34.79,
+      "timestamp": "2026-02-22T14:30:00Z"
+    }
+  ],
+  "plan": "developer",
+  "calls_remaining": 49
+}
+```
+
+That's it. You now have actionable signals flowing into your bot.
+
+---
+
+## Authentication
+
+All API requests require an `X-API-Key` header.
+
+```
+X-API-Key: tinkclaw_bot_d0a7b364e8c91f5a42b3c67e9d0f1e2
+```
+
+Keys follow the format `tinkclaw_<plan>_<32-char-hex>`. Your key is generated automatically after checkout and can be retrieved from your dashboard.
+
+**Never expose your API key in client-side code.** Always make API calls from your server or bot backend.
+
+---
+
+## Rate Limits
+
+| Plan | Daily Limit | Price | Best For |
+|------|------------|-------|----------|
+| **Developer** | 50 | Free | Testing & prototyping |
+| **Bot** | 5,000 | $29/mo | Single-bot production use |
+| **Pro** | 50,000 | $79/mo | Multi-strategy systems |
+| **Enterprise** | Unlimited | $499/mo | Institutional & white-label |
+
+Rate limits reset at **midnight UTC** daily. Every response includes headers to track your usage:
+
+```
+X-RateLimit-Limit: 5000
+X-RateLimit-Remaining: 4823
+X-RateLimit-Reset: 2026-02-23T00:00:00Z
+```
+
+When you exceed your limit, you'll receive a `429` response:
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "reset_at": "2026-02-23T00:00:00Z"
+}
+```
+
+---
+
+## Endpoints
+
+### `GET /v1/signals`
+
+Trading signals based on technical indicators (RSI, SMA, price action).
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbols` | string | `BTC,ETH` | Comma-separated asset symbols |
+
+**Response**
+
+```json
+{
+  "signals": [
+    {
+      "symbol": "BTC",
+      "signal": "BUY",
+      "confidence": 78,
+      "price": 68087.76,
+      "target": 74896.54,
+      "stop_loss": 64683.37,
+      "rsi": 34.79,
+      "price_vs_sma20": -1.45,
+      "timestamp": "2026-02-22T14:30:00Z",
+      "data_source": "meshcue-quant"
+    }
+  ],
+  "plan": "bot",
+  "calls_remaining": 4999,
+  "disclaimer": "Technical indicators for informational use. Not financial advice."
+}
+```
+
+**Signal Values**: `BUY` | `SELL` | `HOLD`
+
+**Confidence**: 0-100 (higher = stronger conviction)
+
+---
+
+### `GET /v1/signals-ml`
+
+AI-enhanced signals combining technical indicators with machine learning predictions.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbols` | string | `BTC,ETH` | Comma-separated asset symbols |
+
+**Response**
+
+```json
+{
+  "signals": [
+    {
+      "symbol": "BTC",
+      "recommendation": "BUY",
+      "confidence": 82,
+      "source": "consensus",
+      "baseline": {
+        "signal": "BUY",
+        "confidence": 78
+      },
+      "ml": {
+        "prediction": "BUY",
+        "confidence": 85,
+        "probabilities": {
+          "BUY": 0.85,
+          "SELL": 0.10,
+          "HOLD": 0.05
+        }
+      },
+      "price": 68087.76,
+      "target": 74896.54,
+      "stop_loss": 64683.37,
+      "timestamp": "2026-02-22T14:30:00Z"
+    }
+  ],
+  "ml_enabled": true
+}
+```
+
+**Signal Source**: `consensus` (ML agrees with baseline) | `ml` (ML overrides) | `baseline` (ML unavailable)
+
+---
+
+### `GET /v1/analysis`
+
+Detailed technical analysis for a single asset including trend, support/resistance, Bollinger Bands, and recommendations.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbol` | string | `BTC` | Single asset symbol |
+
+**Response**
+
+```json
+{
+  "symbol": "BTC",
+  "current_price": 68087.76,
+  "trend": "BULLISH",
+  "support": 63456.23,
+  "resistance": 74892.11,
+  "rsi": 34.79,
+  "ema_12": 67823.45,
+  "ema_26": 68234.56,
+  "sma_20": 68423.10,
+  "price_vs_sma20_pct": -1.45,
+  "bollinger_bands": {
+    "upper": 74892.11,
+    "middle": 68234.56,
+    "lower": 63456.23
+  },
+  "recommendation": "BUY",
+  "timestamp": "2026-02-22T14:30:00Z"
+}
+```
+
+**Trend**: `BULLISH` (EMA12 > EMA26) | `BEARISH` (EMA12 < EMA26)
+
+**Recommendation**: `STRONG BUY` | `BUY` | `HOLD` | `SELL` | `STRONG SELL`
+
+---
+
+### `GET /v1/market-summary`
+
+Overview of all 34 supported assets across crypto, forex, and commodities with sentiment data.
+
+**Response**
+
+```json
+{
+  "crypto": [
+    { "symbol": "BTC", "price": 68087.76, "change_24h": 2.34, "volume": 28932491232 },
+    { "symbol": "ETH", "price": 3200.00, "change_24h": -0.82, "volume": 14521300000 }
+  ],
+  "forex": [
+    { "symbol": "EUR/USD", "price": 1.0842, "change_24h": 0.12 }
+  ],
+  "commodities": [
+    { "symbol": "GOLD", "price": 2034.50, "change_24h": 0.45 }
+  ],
+  "sentiment": {
+    "overall": "neutral",
+    "fear_greed_index": 52
+  },
+  "timestamp": "2026-02-22T14:30:00Z"
+}
+```
+
+---
+
+### `GET /v1/quant`
+
+Fractal regime detection using MFDFA (Multifractal Detrended Fluctuation Analysis) and Hurst exponent.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbol` | string | `BTC` | Asset symbol |
+
+**Response**
+
+```json
+{
+  "symbol": "BTC",
+  "hurst_exponent": 0.62,
+  "regime": "trending",
+  "mfdfa": {
+    "alpha_min": 0.45,
+    "alpha_max": 0.78,
+    "width": 0.33,
+    "asymmetry": 0.12
+  },
+  "interpretation": "Market is in a trending regime (H > 0.5). Momentum strategies favored.",
+  "timestamp": "2026-02-22T14:30:00Z"
+}
+```
+
+**Hurst Exponent Interpretation**:
+- `H < 0.5` — Mean-reverting (range-bound strategies)
+- `H = 0.5` — Random walk (no clear edge)
+- `H > 0.5` — Trending (momentum strategies)
+
+---
+
+### `GET /v1/indicators`
+
+Pre-calculated technical indicators: RSI, MACD, Bollinger Bands, SMA, EMA, ATR, and more.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbol` | string | `BTC` | Asset symbol |
+| `range` | string | `30d` | Time range (`7d`, `30d`, `90d`) |
+
+**Response**
+
+```json
+{
+  "symbol": "BTC",
+  "indicators": {
+    "rsi_14": 34.79,
+    "macd": { "value": 1023.45, "signal": 956.78, "histogram": 66.67 },
+    "bollinger": { "upper": 74892.11, "middle": 68234.56, "lower": 63456.23 },
+    "sma_20": 68423.10,
+    "sma_50": 66234.23,
+    "ema_12": 67823.45,
+    "ema_26": 68234.56,
+    "atr_14": 1234.56,
+    "adx": 45.67,
+    "volume_sma": 24123012301,
+    "obv": 1823412312
+  }
+}
+```
+
+---
+
+### `GET /v1/quant/risk-metrics`
+
+Portfolio risk metrics: Sharpe, Sortino, VaR, CVaR, and maximum drawdown.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbol` | string | `BTC` | Asset symbol |
+
+**Response**
+
+```json
+{
+  "symbol": "BTC",
+  "sharpe_ratio": 1.84,
+  "sortino_ratio": 2.12,
+  "var_95": -0.023,
+  "cvar_95": -0.034,
+  "max_drawdown": -0.12,
+  "volatility_30d": 0.045,
+  "beta": 1.0
+}
+```
+
+---
+
+### `GET /v1/quant/hurst-history`
+
+Rolling Hurst exponent timeseries for regime change detection.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbol` | string | `BTC` | Asset symbol |
+| `range` | string | `30d` | Time range |
+
+**Response**
+
+```json
+{
+  "symbol": "BTC",
+  "history": [
+    { "date": "2026-01-23", "hurst": 0.58, "regime": "trending" },
+    { "date": "2026-01-24", "hurst": 0.47, "regime": "mean_reverting" },
+    { "date": "2026-01-25", "hurst": 0.51, "regime": "random_walk" }
+  ]
+}
+```
+
+---
+
+### `GET /v1/quant/price-chart`
+
+OHLCV candle data for charting.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbol` | string | `BTC` | Asset symbol |
+| `interval` | string | `1d` | Candle interval (`1h`, `4h`, `1d`) |
+| `range` | string | `30d` | Time range |
+
+**Response**
+
+```json
+{
+  "symbol": "BTC",
+  "candles": [
+    {
+      "timestamp": "2026-02-22T00:00:00Z",
+      "open": 67500.00,
+      "high": 68500.00,
+      "low": 67200.00,
+      "close": 68087.76,
+      "volume": 28932491232
+    }
+  ]
+}
+```
+
+---
+
+### `GET /v1/quant/correlation`
+
+Cross-asset correlation matrix.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbols` | string | `BTC,ETH,SOL` | Comma-separated (2-10 assets) |
+| `range` | string | `30d` | Time range |
+
+**Response**
+
+```json
+{
+  "matrix": {
+    "BTC": { "BTC": 1.0, "ETH": 0.87, "SOL": 0.72 },
+    "ETH": { "BTC": 0.87, "ETH": 1.0, "SOL": 0.81 },
+    "SOL": { "BTC": 0.72, "ETH": 0.81, "SOL": 1.0 }
+  },
+  "period": "30d"
+}
+```
+
+---
+
+### `GET /v1/screener`
+
+All 34 assets with key metrics and Hurst exponent at a glance.
+
+**Response**
+
+```json
+{
+  "assets": [
+    {
+      "symbol": "BTC",
+      "price": 68087.76,
+      "change_24h": 2.34,
+      "rsi": 34.79,
+      "hurst": 0.62,
+      "regime": "trending",
+      "signal": "BUY",
+      "confluence_score": 78
+    }
+  ],
+  "total": 34
+}
+```
+
+---
+
+### `GET /v1/news`
+
+Multi-source RSS news feed with sentiment analysis.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `category` | string | `all` | `crypto`, `forex`, `commodities`, `macro`, `all` |
+
+**Response**
+
+```json
+{
+  "articles": [
+    {
+      "title": "Bitcoin Breaks Key Resistance Level",
+      "source": "CoinDesk",
+      "url": "https://...",
+      "sentiment": "positive",
+      "sentiment_score": 0.82,
+      "published_at": "2026-02-22T12:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### `GET /v1/indices`
+
+Major global stock indices.
+
+**Response**
+
+```json
+{
+  "indices": [
+    { "symbol": "SPX", "name": "S&P 500", "value": 5234.12, "change": 0.45 },
+    { "symbol": "DJI", "name": "Dow Jones", "value": 39234.56, "change": 0.32 },
+    { "symbol": "IXIC", "name": "NASDAQ", "value": 16789.01, "change": 0.67 }
+  ]
+}
+```
+
+---
+
+### `POST /v1/backtest`
+
+Run a backtest with built-in or custom strategies against historical data.
+
+**Request Body**
+
+```json
+{
+  "symbol": "BTC",
+  "strategy": "hurst_momentum",
+  "start_date": "2025-01-01",
+  "end_date": "2026-02-01",
+  "initial_capital": 10000
+}
+```
+
+**Available Strategies**: `hurst_momentum` | `mean_reversion` | `ma_crossover` | `buy_and_hold`
+
+**Response**
+
+```json
+{
+  "strategy": "hurst_momentum",
+  "symbol": "BTC",
+  "period": { "start": "2025-01-01", "end": "2026-02-01" },
+  "results": {
+    "total_return": 0.43,
+    "annual_return": 0.38,
+    "sharpe_ratio": 1.84,
+    "max_drawdown": -0.12,
+    "win_rate": 0.60,
+    "total_trades": 47,
+    "profit_factor": 1.92
+  }
+}
+```
+
+---
+
+### `GET /v1/confluence`
+
+6-layer weighted confluence score combining technical, sentiment, on-chain, macro, information flow, and quantitative signals.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `symbol` | string | `BTC` | Asset symbol |
+
+**Response**
+
+```json
+{
+  "symbol": "BTC",
+  "confluence_score": 78,
+  "direction": "BULLISH",
+  "layers": {
+    "technical": { "score": 82, "weight": 0.25 },
+    "sentiment": { "score": 71, "weight": 0.15 },
+    "on_chain": { "score": 85, "weight": 0.20 },
+    "macro": { "score": 65, "weight": 0.15 },
+    "information_flow": { "score": 79, "weight": 0.10 },
+    "quantitative": { "score": 88, "weight": 0.15 }
+  },
+  "timestamp": "2026-02-22T14:30:00Z"
+}
+```
+
+**Score Interpretation**:
+- **80-100**: Strong signal (high conviction)
+- **60-79**: Moderate signal
+- **40-59**: Weak/neutral
+- **0-39**: Contrarian territory
+
+---
+
+## Integration Examples
+
+### Python
+
+```python
+import requests
+
+API_KEY = "tinkclaw_bot_YOUR_KEY_HERE"
+BASE_URL = "https://api.tinkclaw.com/v1"
+
+headers = {"X-API-Key": API_KEY}
+
+# Get signals for BTC and ETH
+response = requests.get(
+    f"{BASE_URL}/signals",
+    headers=headers,
+    params={"symbols": "BTC,ETH"}
+)
+data = response.json()
+
+for signal in data["signals"]:
+    print(f"{signal['symbol']}: {signal['signal']} "
+          f"(confidence: {signal['confidence']}%)")
+
+# Check remaining calls
+remaining = response.headers.get("X-RateLimit-Remaining")
+print(f"Calls remaining today: {remaining}")
+```
+
+### Node.js
+
+```javascript
+const API_KEY = "tinkclaw_bot_YOUR_KEY_HERE";
+const BASE_URL = "https://api.tinkclaw.com/v1";
+
+async function getSignals(symbols = "BTC,ETH") {
+  const response = await fetch(
+    `${BASE_URL}/signals?symbols=${symbols}`,
+    { headers: { "X-API-Key": API_KEY } }
+  );
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      const { reset_at } = await response.json();
+      console.log(`Rate limited. Resets at ${reset_at}`);
+      return null;
+    }
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Usage
+const data = await getSignals("BTC,SOL,ETH");
+data.signals.forEach(s =>
+  console.log(`${s.symbol}: ${s.signal} (${s.confidence}%)`)
+);
+```
+
+### Go
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+const (
+    apiKey  = "tinkclaw_bot_YOUR_KEY_HERE"
+    baseURL = "https://api.tinkclaw.com/v1"
+)
+
+type SignalResponse struct {
+    Signals []struct {
+        Symbol     string  `json:"symbol"`
+        Signal     string  `json:"signal"`
+        Confidence int     `json:"confidence"`
+        Price      float64 `json:"price"`
+    } `json:"signals"`
+    CallsRemaining int `json:"calls_remaining"`
+}
+
+func getSignals(symbols string) (*SignalResponse, error) {
+    req, _ := http.NewRequest("GET",
+        fmt.Sprintf("%s/signals?symbols=%s", baseURL, symbols), nil)
+    req.Header.Set("X-API-Key", apiKey)
+
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    var data SignalResponse
+    json.NewDecoder(resp.Body).Decode(&data)
+    return &data, nil
+}
+```
+
+### Trading Bot Example (Python)
+
+A minimal bot that checks signals every hour and logs trade decisions:
+
+```python
+import requests
+import time
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("tinkclaw-bot")
+
+API_KEY = "tinkclaw_bot_YOUR_KEY_HERE"
+BASE = "https://api.tinkclaw.com/v1"
+HEADERS = {"X-API-Key": API_KEY}
+WATCHLIST = "BTC,ETH,SOL"
+
+def check_signals():
+    """Fetch signals and act on high-confidence ones."""
+    resp = requests.get(f"{BASE}/signals-ml", headers=HEADERS,
+                        params={"symbols": WATCHLIST})
+    resp.raise_for_status()
+    data = resp.json()
+
+    for signal in data["signals"]:
+        sym = signal["symbol"]
+        action = signal["recommendation"]
+        conf = signal["confidence"]
+
+        if conf >= 75:
+            logger.info(f"HIGH CONFIDENCE: {sym} → {action} ({conf}%)")
+            # execute_trade(sym, action, signal["price"],
+            #               signal["target"], signal["stop_loss"])
+        else:
+            logger.debug(f"{sym} → {action} ({conf}%) — skipping")
+
+    logger.info(f"Calls remaining: {data['calls_remaining']}")
+
+if __name__ == "__main__":
+    while True:
+        try:
+            check_signals()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                logger.warning("Rate limited. Sleeping until reset.")
+                time.sleep(3600)
+            else:
+                raise
+        time.sleep(3600)  # Check every hour
+```
+
+---
+
+## Error Handling
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| `200` | Success | Parse response body |
+| `401` | Invalid or missing API key | Check your `X-API-Key` header |
+| `403` | Key is inactive/cancelled | Renew subscription at tinkclaw.com |
+| `429` | Rate limit exceeded | Wait until `reset_at` time |
+| `500` | Server error | Retry with exponential backoff |
+| `503` | Backend unavailable | Retry after 30 seconds |
+
+**Recommended retry strategy:**
+
+```python
+import time
+
+def api_call_with_retry(url, headers, max_retries=3):
+    for attempt in range(max_retries):
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        if response.status_code == 429:
+            reset = response.json().get("reset_at")
+            print(f"Rate limited. Resets at {reset}")
+            return None
+        if response.status_code >= 500:
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            time.sleep(wait)
+            continue
+        response.raise_for_status()
+    raise Exception("Max retries exceeded")
+```
+
+---
+
+## SDKs & Libraries
+
+### ClawBot Python SDK
+
+```bash
+pip install clawbot
+```
+
+```python
+from clawbot import TinkClawClient
+
+client = TinkClawClient(api_key="tinkclaw_bot_...")
+
+# Get confluence score
+confluence = client.get_confluence("BTC")
+print(f"Score: {confluence.score}, Direction: {confluence.direction}")
+
+# Get indicators with history
+indicators = client.get_indicators("ETH", range_days=30)
+print(f"RSI: {indicators.rsi_14}, MACD: {indicators.macd.value}")
+
+# Run backtest
+results = client.backtest("BTC", strategy="hurst_momentum",
+                          start="2025-01-01", end="2026-02-01")
+print(f"Return: {results.total_return:.1%}, Sharpe: {results.sharpe_ratio:.2f}")
+```
+
+More SDKs coming soon. In the meantime, the REST API works with any HTTP client.
+
+---
+
+## Supported Assets (34)
+
+### Crypto (20)
+BTC, ETH, SOL, ADA, DOT, AVAX, MATIC, LINK, UNI, ATOM, XRP, BNB, DOGE, SHIB, LTC, BCH, XLM, ALGO, FTM, NEAR
+
+### Forex (8)
+EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, NZD/USD, USD/CHF, EUR/GBP
+
+### Commodities (6)
+GOLD, SILVER, OIL, NATGAS, COPPER, WHEAT
+
+---
+
+## FAQ
+
+**Is this financial advice?**
+No. TinkClaw provides quantitative analysis and data for informational purposes only. Always do your own research.
+
+**What data sources do you use?**
+We aggregate from major exchanges and data providers to compute indicators, sentiment, and on-chain metrics in real-time.
+
+**How fresh is the data?**
+Market data is cached for 30 seconds, indicators for 5 minutes, and risk metrics for 1 hour. Check the `X-Cache-TTL` response header.
+
+**Can I use custom strategies with backtesting?**
+Currently 4 built-in strategies are available. Custom strategy support is on the roadmap. Enterprise customers can request early access.
+
+**Do you offer refunds?**
+Yes, 14-day money-back guarantee on all paid plans.
+
+---
+
+## Architecture
+
+```
+Your Bot
+   │
+   ▼ HTTPS
+┌──────────────────┐
+│  Cloudflare Edge  │  ← Auth, rate limiting, caching
+│    (Workers)      │
+└────────┬─────────┘
+         │
+         ▼ Internal
+┌──────────────────┐
+│  Quant Engine     │  ← MFDFA, indicators, confluence
+│  (Backend API)    │
+└────────┬─────────┘
+         │
+         ▼ Optional
+┌──────────────────┐
+│   ML Service      │  ← Signal enhancement, prediction
+│  (Python/PyTorch) │
+└──────────────────┘
+```
+
+---
+
+## License
+
+This documentation is provided under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The TinkClaw API itself is a commercial product — see [tinkclaw.com](https://tinkclaw.com) for terms.
+
+---
+
+**Questions?** Open an issue in this repo or reach out at [tinkclaw.com](https://tinkclaw.com).
