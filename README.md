@@ -147,7 +147,7 @@ Trading signals based on technical indicators (RSI, SMA, price action).
       "rsi": 34.79,
       "price_vs_sma20": -1.45,
       "timestamp": "2026-02-22T14:30:00Z",
-      "data_source": "meshcue-quant"
+      "data_source": "tinkclaw-quant"
     }
   ],
   "plan": "bot",
@@ -587,12 +587,12 @@ Run a backtest with built-in or custom strategies against historical data.
   "confluence_score": 78,
   "direction": "BULLISH",
   "layers": {
-    "technical": { "score": 82, "weight": 0.25 },
-    "sentiment": { "score": 71, "weight": 0.15 },
-    "on_chain": { "score": 85, "weight": 0.20 },
-    "macro": { "score": 65, "weight": 0.15 },
-    "information_flow": { "score": 79, "weight": 0.10 },
-    "quantitative": { "score": 88, "weight": 0.15 }
+    "technical": { "score": 82 },
+    "sentiment": { "score": 71 },
+    "on_chain": { "score": 85 },
+    "macro": { "score": 65 },
+    "information_flow": { "score": 79 },
+    "quantitative": { "score": 88 }
   },
   "timestamp": "2026-02-22T14:30:00Z"
 }
@@ -847,7 +847,7 @@ GOLD, SILVER, OIL, NATGAS, COPPER, WHEAT
 No. TinkClaw provides quantitative analysis and data for informational purposes only. Always do your own research.
 
 **What data sources do you use?**
-We aggregate from major exchanges and data providers to compute indicators, sentiment, and on-chain metrics in real-time.
+We use a proprietary multi-source pipeline to compute indicators, sentiment, and on-chain metrics.
 
 **How fresh is the data?**
 Market data is cached for 30 seconds, indicators for 5 minutes, and risk metrics for 1 hour. Check the `X-Cache-TTL` response header.
@@ -867,20 +867,17 @@ Your Bot
    │
    ▼ HTTPS
 ┌──────────────────┐
-│  Cloudflare Edge  │  ← Auth, rate limiting, caching
-│    (Workers)      │
+│   Edge Gateway    │  ← Auth, rate limiting, caching
 └────────┬─────────┘
          │
-         ▼ Internal
+         ▼
 ┌──────────────────┐
 │  Quant Engine     │  ← MFDFA, indicators, confluence
-│  (Backend API)    │
 └────────┬─────────┘
          │
-         ▼ Optional
+         ▼
 ┌──────────────────┐
 │   ML Service      │  ← Signal enhancement, prediction
-│  (Python/PyTorch) │
 └──────────────────┘
 ```
 
