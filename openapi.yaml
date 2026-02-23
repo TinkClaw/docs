@@ -16,11 +16,12 @@ info:
 
     | Plan | Daily Limit | Price |
     |------|------------|-------|
-    | Developer | 50 | Free |
-    | Bot | 5,000 | $29/mo |
-    | Pro | 50,000 | $79/mo |
-    | Enterprise | Unlimited | $499/mo |
-  version: 1.0.0
+    | Free | 500 | $0 |
+    | Pro | 50,000 | $29/mo |
+    | Enterprise | Unlimited | Custom |
+
+    Annual billing: 20% off ($23/mo for Pro). No credit card required for Free tier.
+  version: 1.4.0
   contact:
     name: TinkClaw Support
     url: https://tinkclaw.com
@@ -47,6 +48,10 @@ tags:
     description: Screener, news, indices, and price charts
   - name: Backtesting
     description: Historical strategy backtesting
+  - name: Webhooks
+    description: Subscribe to price, confluence, and RSI alerts
+  - name: Account
+    description: API key usage and account info
 
 paths:
   /signals:
@@ -84,10 +89,10 @@ paths:
                       $ref: "#/components/schemas/Signal"
                   plan:
                     type: string
-                    example: "bot"
+                    example: "free"
                   calls_remaining:
                     type: integer
-                    example: 4999
+                    example: 499
                   disclaimer:
                     type: string
               example:
@@ -101,8 +106,8 @@ paths:
                     rsi: 34.79
                     price_vs_sma20: -1.45
                     timestamp: "2026-02-22T14:30:00Z"
-                plan: "bot"
-                calls_remaining: 4999
+                plan: "free"
+                calls_remaining: 499
                 disclaimer: "Technical indicators for informational use. Not financial advice."
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -178,7 +183,7 @@ paths:
                     stop_loss: 64683.37
                     timestamp: "2026-02-22T14:30:00Z"
                 ml_enabled: true
-                calls_remaining: 4998
+                calls_remaining: 498
                 disclaimer: "ML-powered signals for informational use. Not financial advice."
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -190,8 +195,8 @@ paths:
       operationId: getAnalysis
       summary: Get market analysis
       description: |
-        Detailed technical analysis for a single asset including trend direction,
-        support/resistance levels, Bollinger Bands, and a recommendation.
+        Detailed technical analysis including trend direction, support/resistance levels,
+        Bollinger Bands, and a recommendation. Supports batch queries with `symbols`.
       tags: [Analysis]
       parameters:
         - name: symbol
@@ -201,6 +206,12 @@ paths:
             type: string
             default: "BTC"
             example: "BTC"
+        - name: symbols
+          in: query
+          description: Comma-separated symbols for batch (up to 10). Overrides `symbol`.
+          schema:
+            type: string
+            example: "BTC,ETH,SOL"
       responses:
         "200":
           description: Analysis returned successfully
@@ -292,6 +303,7 @@ paths:
       description: |
         6-layer weighted confluence score combining technical, sentiment, on-chain,
         macro, information flow, and quantitative signals into a single actionable score.
+        Includes ATR-based volatility bands. Supports batch queries with `symbols`.
       tags: [Signals]
       parameters:
         - name: symbol
@@ -300,6 +312,12 @@ paths:
           schema:
             type: string
             default: "BTC"
+        - name: symbols
+          in: query
+          description: Comma-separated symbols for batch (up to 10). Overrides `symbol`.
+          schema:
+            type: string
+            example: "BTC,ETH,SOL"
       responses:
         "200":
           description: Confluence score returned successfully
@@ -309,22 +327,21 @@ paths:
                 $ref: "#/components/schemas/Confluence"
               example:
                 symbol: "BTC"
-                confluence_score: 78
-                direction: "BULLISH"
+                score: 87
+                score_band:
+                  low: 83
+                  high: 91
+                volatility: "moderate"
+                atr_pct: 2.14
+                recommendation: "STRONG BUY"
                 layers:
-                  technical:
-                    score: 82
-                  sentiment:
-                    score: 71
-                  on_chain:
-                    score: 85
-                  macro:
-                    score: 65
-                  information_flow:
-                    score: 79
-                  quantitative:
-                    score: 88
-                timestamp: "2026-02-22T14:30:00Z"
+                  technical: 90
+                  sentiment: 82
+                  on_chain: 88
+                  macro: 85
+                  flow: 91
+                  quant: 86
+                timestamp: "2026-02-23T12:00:00.000Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -717,6 +734,100 @@ paths:
         "429":
           $ref: "#/components/responses/RateLimited"
 
+  /webhooks/subscribe:
+    post:
+      operationId: subscribeWebhook
+      summary: Subscribe to alerts
+      description: |
+        Subscribe to price, confluence, or RSI alerts. TinkClaw will POST to your
+        callback URL when conditions trigger.
+      tags: [Webhooks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookSubscribeRequest"
+            example:
+              url: "https://your-server.com/webhook"
+              event: "confluence_above"
+              symbol: "BTC"
+              threshold: 80
+      responses:
+        "200":
+          description: Webhook subscription created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+              example:
+                id: "wh_a1b2c3d4"
+                status: "active"
+                event: "confluence_above"
+                symbol: "BTC"
+                threshold: 80
+                url: "https://your-server.com/webhook"
+                created_at: "2026-02-23T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /webhooks:
+    get:
+      operationId: listWebhooks
+      summary: List webhook subscriptions
+      description: List your active webhook subscriptions.
+      tags: [Webhooks]
+      responses:
+        "200":
+          description: Webhook list returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  webhooks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WebhookSubscription"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /usage:
+    get:
+      operationId: getUsage
+      summary: Get API key usage stats
+      description: Returns your current plan, daily limit, and remaining quota.
+      tags: [Account]
+      responses:
+        "200":
+          description: Usage stats returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plan:
+                    type: string
+                    example: "free"
+                  daily_limit:
+                    type: integer
+                    example: 500
+                  calls_today:
+                    type: integer
+                    example: 18
+                  calls_remaining:
+                    type: integer
+                    example: 482
+                  reset_at:
+                    type: string
+                    format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -732,17 +843,23 @@ components:
       description: Your daily quota
       schema:
         type: integer
-        example: 5000
+        example: 500
     X-RateLimit-Remaining:
       description: Calls remaining today
       schema:
         type: integer
-        example: 4823
+        example: 482
     X-RateLimit-Reset:
       description: UTC time when the limit resets
       schema:
         type: string
         format: date-time
+    X-Cache:
+      description: Edge cache status — HIT (served from edge ~5ms), MISS (fetched from backend), BYPASS (non-cacheable)
+      schema:
+        type: string
+        enum: [HIT, MISS, BYPASS]
+        example: "HIT"
 
   responses:
     Unauthorized:
@@ -953,30 +1070,46 @@ components:
       properties:
         symbol:
           type: string
-        confluence_score:
+        score:
           type: integer
           minimum: 0
           maximum: 100
           description: |
             80-100: Strong signal. 60-79: Moderate. 40-59: Weak/neutral. 0-39: Contrarian.
-        direction:
+        score_band:
+          type: object
+          description: ATR-adjusted range showing where the score could move based on current volatility
+          properties:
+            low:
+              type: integer
+            high:
+              type: integer
+        volatility:
           type: string
-          enum: [BULLISH, BEARISH, NEUTRAL]
+          enum: [low, moderate, high, extreme]
+          description: Current volatility regime
+        atr_pct:
+          type: number
+          format: double
+          description: ATR as percentage of price
+        recommendation:
+          type: string
+          enum: [STRONG BUY, BUY, HOLD, SELL, STRONG SELL]
         layers:
           type: object
           properties:
             technical:
-              $ref: "#/components/schemas/LayerScore"
+              type: integer
             sentiment:
-              $ref: "#/components/schemas/LayerScore"
+              type: integer
             on_chain:
-              $ref: "#/components/schemas/LayerScore"
+              type: integer
             macro:
-              $ref: "#/components/schemas/LayerScore"
-            information_flow:
-              $ref: "#/components/schemas/LayerScore"
-            quantitative:
-              $ref: "#/components/schemas/LayerScore"
+              type: integer
+            flow:
+              type: integer
+            quant:
+              type: integer
         timestamp:
           type: string
           format: date-time
@@ -1266,3 +1399,48 @@ components:
             profit_factor:
               type: number
               format: double
+
+    WebhookSubscribeRequest:
+      type: object
+      required: [url, event, symbol, threshold]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Callback URL to receive POST notifications
+        event:
+          type: string
+          enum: [price_above, price_below, confluence_above, confluence_below, rsi_above, rsi_below]
+        symbol:
+          type: string
+          example: "BTC"
+        threshold:
+          type: number
+          description: Trigger threshold value
+
+    WebhookSubscription:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "wh_a1b2c3d4"
+        event:
+          type: string
+          enum: [price_above, price_below, confluence_above, confluence_below, rsi_above, rsi_below]
+        symbol:
+          type: string
+        threshold:
+          type: number
+        url:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum: [active, paused]
+        last_triggered:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time

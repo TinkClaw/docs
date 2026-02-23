@@ -31,10 +31,14 @@ TinkClaw delivers fractal regime detection, information flow analysis, and multi
    - [Global Indices](#get-v1indices)
    - [Backtesting](#post-v1backtest)
    - [Confluence Score](#get-v1confluence)
-5. [Integration Examples](#integration-examples)
-6. [Error Handling](#error-handling)
-7. [SDKs & Libraries](#sdks--libraries)
-8. [FAQ](#faq)
+   - [Webhook Subscribe](#post-v1webhookssubscribe)
+   - [Webhook List](#get-v1webhooks)
+   - [Usage Stats](#get-v1usage)
+5. [Edge Caching](#edge-caching)
+6. [Integration Examples](#integration-examples)
+7. [Error Handling](#error-handling)
+8. [SDKs & Libraries](#sdks--libraries)
+9. [FAQ](#faq)
 
 ---
 
@@ -44,7 +48,7 @@ Get your first signal in under 60 seconds.
 
 ### 1. Get an API Key
 
-Sign up at [tinkclaw.com](https://tinkclaw.com) — the Developer tier is free (50 calls/day).
+Sign up at [tinkclaw.com](https://tinkclaw.com) — the Free tier gives you 500 calls/day, no credit card required.
 
 ### 2. Make Your First Request
 
@@ -69,8 +73,8 @@ curl -H "X-API-Key: YOUR_KEY" \
       "timestamp": "2026-02-22T14:30:00Z"
     }
   ],
-  "plan": "developer",
-  "calls_remaining": 49
+  "plan": "free",
+  "calls_remaining": 499
 }
 ```
 
@@ -83,7 +87,7 @@ That's it. You now have actionable signals flowing into your bot.
 All API requests require an `X-API-Key` header.
 
 ```
-X-API-Key: tinkclaw_bot_d0a7b364e8c91f5a42b3c67e9d0f1e2
+X-API-Key: tinkclaw_free_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
 ```
 
 Keys follow the format `tinkclaw_<plan>_<32-char-hex>`. Your key is generated automatically after checkout and can be retrieved from your dashboard.
@@ -96,17 +100,19 @@ Keys follow the format `tinkclaw_<plan>_<32-char-hex>`. Your key is generated au
 
 | Plan | Daily Limit | Price | Best For |
 |------|------------|-------|----------|
-| **Developer** | 50 | Free | Testing & prototyping |
-| **Bot** | 5,000 | $29/mo | Single-bot production use |
-| **Pro** | 50,000 | $79/mo | Multi-strategy systems |
-| **Enterprise** | Unlimited | $499/mo | Institutional & white-label |
+| **Free** | 500 | $0 | Testing & prototyping |
+| **Pro** | 50,000 | $29/mo | Production bots & multi-strategy |
+| **Enterprise** | Unlimited | Custom | Institutional & white-label |
 
-Rate limits reset at **midnight UTC** daily. Every response includes headers to track your usage:
+Annual billing: 20% off ($23/mo for Pro). No credit card required for Free tier.
+
+Rate limits reset at **midnight UTC** daily. Every response includes headers to track your usage and cache status:
 
 ```
-X-RateLimit-Limit: 5000
-X-RateLimit-Remaining: 4823
-X-RateLimit-Reset: 2026-02-23T00:00:00Z
+X-RateLimit-Limit: 500
+X-RateLimit-Remaining: 482
+X-RateLimit-Reset: 2026-02-24T00:00:00Z
+X-Cache: HIT
 ```
 
 When you exceed your limit, you'll receive a `429` response:
@@ -150,8 +156,8 @@ Trading signals based on technical indicators (RSI, SMA, price action).
       "data_source": "tinkclaw-quant"
     }
   ],
-  "plan": "bot",
-  "calls_remaining": 4999,
+  "plan": "free",
+  "calls_remaining": 499,
   "disclaimer": "Technical indicators for informational use. Not financial advice."
 }
 ```
@@ -211,13 +217,14 @@ AI-enhanced signals combining technical indicators with machine learning predict
 
 ### `GET /v1/analysis`
 
-Detailed technical analysis for a single asset including trend, support/resistance, Bollinger Bands, and recommendations.
+Detailed technical analysis including trend, support/resistance, Bollinger Bands, and recommendations. Supports batch queries.
 
 **Parameters**
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
 | `symbol` | string | `BTC` | Single asset symbol |
+| `symbols` | string | — | Comma-separated symbols for batch (up to 10). Overrides `symbol`. |
 
 **Response**
 
@@ -571,30 +578,34 @@ Run a backtest with built-in or custom strategies against historical data.
 
 ### `GET /v1/confluence`
 
-6-layer weighted confluence score combining technical, sentiment, on-chain, macro, information flow, and quantitative signals.
+6-layer weighted confluence score combining technical, sentiment, on-chain, macro, information flow, and quantitative signals. Includes ATR-based volatility bands. Supports batch queries.
 
 **Parameters**
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
 | `symbol` | string | `BTC` | Asset symbol |
+| `symbols` | string | — | Comma-separated symbols for batch (up to 10). Overrides `symbol`. |
 
 **Response**
 
 ```json
 {
   "symbol": "BTC",
-  "confluence_score": 78,
-  "direction": "BULLISH",
+  "score": 87,
+  "score_band": { "low": 83, "high": 91 },
+  "volatility": "moderate",
+  "atr_pct": 2.14,
   "layers": {
-    "technical": { "score": 82 },
-    "sentiment": { "score": 71 },
-    "on_chain": { "score": 85 },
-    "macro": { "score": 65 },
-    "information_flow": { "score": 79 },
-    "quantitative": { "score": 88 }
+    "technical": 90,
+    "sentiment": 82,
+    "on_chain": 88,
+    "macro": 85,
+    "flow": 91,
+    "quant": 86
   },
-  "timestamp": "2026-02-22T14:30:00Z"
+  "recommendation": "STRONG BUY",
+  "timestamp": "2026-02-23T12:00:00.000Z"
 }
 ```
 
@@ -603,6 +614,104 @@ Run a backtest with built-in or custom strategies against historical data.
 - **60-79**: Moderate signal
 - **40-59**: Weak/neutral
 - **0-39**: Contrarian territory
+
+**Volatility Regimes**: `low` | `moderate` | `high` | `extreme`
+
+**Score Band**: ATR-adjusted range showing where the score could move based on current volatility.
+
+---
+
+### `POST /v1/webhooks/subscribe`
+
+Subscribe to price, confluence, or RSI alerts. TinkClaw will POST to your callback URL when conditions trigger.
+
+**Request Body**
+
+```json
+{
+  "url": "https://your-server.com/webhook",
+  "event": "confluence_above",
+  "symbol": "BTC",
+  "threshold": 80
+}
+```
+
+**Available Events**: `price_above` | `price_below` | `confluence_above` | `confluence_below` | `rsi_above` | `rsi_below`
+
+**Response**
+
+```json
+{
+  "id": "wh_a1b2c3d4",
+  "status": "active",
+  "event": "confluence_above",
+  "symbol": "BTC",
+  "threshold": 80,
+  "url": "https://your-server.com/webhook",
+  "created_at": "2026-02-23T12:00:00Z"
+}
+```
+
+---
+
+### `GET /v1/webhooks`
+
+List your active webhook subscriptions.
+
+**Response**
+
+```json
+{
+  "webhooks": [
+    {
+      "id": "wh_a1b2c3d4",
+      "event": "confluence_above",
+      "symbol": "BTC",
+      "threshold": 80,
+      "url": "https://your-server.com/webhook",
+      "status": "active",
+      "last_triggered": "2026-02-23T14:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### `GET /v1/usage`
+
+Your API key usage stats and remaining quota.
+
+**Response**
+
+```json
+{
+  "plan": "free",
+  "daily_limit": 500,
+  "calls_today": 18,
+  "calls_remaining": 482,
+  "reset_at": "2026-02-24T00:00:00Z"
+}
+```
+
+---
+
+## Edge Caching
+
+All GET endpoints are served via Cloudflare's global edge network. Responses are cached per-region for ultra-low latency.
+
+| Endpoint Type | Cache TTL |
+|---------------|-----------|
+| Confluence, Indicators | 30 seconds |
+| Quant, Risk, Screener, Correlation | 60 seconds |
+
+Every response includes an `X-Cache` header:
+
+- `HIT` — Served from edge cache (~5ms)
+- `MISS` — Fetched from backend, now cached (~300-800ms)
+- `BYPASS` — Non-cacheable request (POST, etc.)
+
+Edge caching is automatic — no configuration needed. All tiers get the same caching performance.
 
 ---
 
@@ -613,7 +722,7 @@ Run a backtest with built-in or custom strategies against historical data.
 ```python
 import requests
 
-API_KEY = "tinkclaw_bot_YOUR_KEY_HERE"
+API_KEY = "tinkclaw_free_YOUR_KEY_HERE"
 BASE_URL = "https://api.tinkclaw.com/v1"
 
 headers = {"X-API-Key": API_KEY}
@@ -638,7 +747,7 @@ print(f"Calls remaining today: {remaining}")
 ### Node.js
 
 ```javascript
-const API_KEY = "tinkclaw_bot_YOUR_KEY_HERE";
+const API_KEY = "tinkclaw_free_YOUR_KEY_HERE";
 const BASE_URL = "https://api.tinkclaw.com/v1";
 
 async function getSignals(symbols = "BTC,ETH") {
@@ -678,7 +787,7 @@ import (
 )
 
 const (
-    apiKey  = "tinkclaw_bot_YOUR_KEY_HERE"
+    apiKey  = "tinkclaw_free_YOUR_KEY_HERE"
     baseURL = "https://api.tinkclaw.com/v1"
 )
 
@@ -721,7 +830,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tinkclaw-bot")
 
-API_KEY = "tinkclaw_bot_YOUR_KEY_HERE"
+API_KEY = "tinkclaw_free_YOUR_KEY_HERE"
 BASE = "https://api.tinkclaw.com/v1"
 HEADERS = {"X-API-Key": API_KEY}
 WATCHLIST = "BTC,ETH,SOL"
@@ -847,7 +956,7 @@ No. TinkClaw provides quantitative analysis and data for informational purposes 
 We use a proprietary multi-source pipeline to compute indicators, sentiment, and on-chain metrics.
 
 **How fresh is the data?**
-Market data is cached for 30 seconds, indicators for 5 minutes, and risk metrics for 1 hour. Check the `X-Cache-TTL` response header.
+All endpoints are served via global edge caching. Confluence and indicators are cached for 30 seconds, quant and risk data for 60 seconds. Check the `X-Cache` response header (`HIT` = served from edge, `MISS` = fresh from backend).
 
 **Can I use custom strategies with backtesting?**
 Currently 4 built-in strategies are available. Custom strategy support is on the roadmap. Enterprise customers can request early access.
@@ -864,7 +973,8 @@ Your Bot
    │
    ▼ HTTPS
 ┌──────────────────┐
-│   Edge Gateway    │  ← Auth, rate limiting, caching
+│   Edge Gateway    │  ← Auth, rate limiting, edge caching (sub-50ms)
+│  (Cloudflare)     │     X-Cache: HIT/MISS on every response
 └────────┬─────────┘
          │
          ▼
