@@ -1,0 +1,1268 @@
+openapi: 3.0.3
+info:
+  title: TinkClaw API
+  description: |
+    Quant intelligence for trading bots. TinkClaw delivers fractal regime detection,
+    information flow analysis, and multi-signal confluence scoring via REST.
+
+    ## Authentication
+    All endpoints require an `X-API-Key` header. Get your key at [tinkclaw.com](https://tinkclaw.com).
+
+    ## Rate Limits
+    Every response includes rate limit headers:
+    - `X-RateLimit-Limit` — Your daily quota
+    - `X-RateLimit-Remaining` — Calls left today
+    - `X-RateLimit-Reset` — UTC reset time
+
+    | Plan | Daily Limit | Price |
+    |------|------------|-------|
+    | Developer | 50 | Free |
+    | Bot | 5,000 | $29/mo |
+    | Pro | 50,000 | $79/mo |
+    | Enterprise | Unlimited | $499/mo |
+  version: 1.0.0
+  contact:
+    name: TinkClaw Support
+    url: https://tinkclaw.com
+    email: support@tinkclaw.com
+  license:
+    name: CC BY 4.0
+    url: https://creativecommons.org/licenses/by/4.0/
+
+servers:
+  - url: https://api.tinkclaw.com/v1
+    description: Production
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Signals
+    description: Trading signals — rule-based and ML-enhanced
+  - name: Analysis
+    description: Technical analysis and market overview
+  - name: Quant
+    description: Fractal regime detection, risk metrics, and quantitative tools
+  - name: Market Data
+    description: Screener, news, indices, and price charts
+  - name: Backtesting
+    description: Historical strategy backtesting
+
+paths:
+  /signals:
+    get:
+      operationId: getSignals
+      summary: Get trading signals
+      description: |
+        Returns BUY/SELL/HOLD signals based on technical indicators (RSI, SMA, price action)
+        for one or more assets.
+      tags: [Signals]
+      parameters:
+        - name: symbols
+          in: query
+          description: Comma-separated asset symbols
+          schema:
+            type: string
+            default: "BTC,ETH"
+            example: "BTC,ETH,SOL"
+      responses:
+        "200":
+          description: Signals returned successfully
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signals:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Signal"
+                  plan:
+                    type: string
+                    example: "bot"
+                  calls_remaining:
+                    type: integer
+                    example: 4999
+                  disclaimer:
+                    type: string
+              example:
+                signals:
+                  - symbol: "BTC"
+                    signal: "BUY"
+                    confidence: 78
+                    price: 68087.76
+                    target: 74896.54
+                    stop_loss: 64683.37
+                    rsi: 34.79
+                    price_vs_sma20: -1.45
+                    timestamp: "2026-02-22T14:30:00Z"
+                plan: "bot"
+                calls_remaining: 4999
+                disclaimer: "Technical indicators for informational use. Not financial advice."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /signals-ml:
+    get:
+      operationId: getSignalsMl
+      summary: Get ML-enhanced signals
+      description: |
+        AI-enhanced signals combining technical indicators with machine learning predictions.
+        Returns a `source` field indicating whether the final recommendation came from
+        `consensus` (ML agrees with baseline), `ml` (ML override), or `baseline` (ML unavailable).
+      tags: [Signals]
+      parameters:
+        - name: symbols
+          in: query
+          description: Comma-separated asset symbols
+          schema:
+            type: string
+            default: "BTC,ETH"
+            example: "BTC,ETH,SOL"
+      responses:
+        "200":
+          description: ML signals returned successfully
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-ML-Enabled:
+              schema:
+                type: string
+                example: "true"
+              description: Whether ML predictions were available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signals:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MlSignal"
+                  plan:
+                    type: string
+                  calls_remaining:
+                    type: integer
+                  ml_enabled:
+                    type: boolean
+                  disclaimer:
+                    type: string
+              example:
+                signals:
+                  - symbol: "BTC"
+                    recommendation: "BUY"
+                    confidence: 82
+                    source: "consensus"
+                    baseline:
+                      signal: "BUY"
+                      confidence: 78
+                    ml:
+                      prediction: "BUY"
+                      confidence: 85
+                      probabilities:
+                        BUY: 0.85
+                        SELL: 0.10
+                        HOLD: 0.05
+                      model_accuracy: 0.73
+                    price: 68087.76
+                    target: 74896.54
+                    stop_loss: 64683.37
+                    timestamp: "2026-02-22T14:30:00Z"
+                ml_enabled: true
+                calls_remaining: 4998
+                disclaimer: "ML-powered signals for informational use. Not financial advice."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /analysis:
+    get:
+      operationId: getAnalysis
+      summary: Get market analysis
+      description: |
+        Detailed technical analysis for a single asset including trend direction,
+        support/resistance levels, Bollinger Bands, and a recommendation.
+      tags: [Analysis]
+      parameters:
+        - name: symbol
+          in: query
+          description: Single asset symbol
+          schema:
+            type: string
+            default: "BTC"
+            example: "BTC"
+      responses:
+        "200":
+          description: Analysis returned successfully
+          headers:
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analysis"
+              example:
+                symbol: "BTC"
+                current_price: 68087.76
+                trend: "BULLISH"
+                support: 63456.23
+                resistance: 74892.11
+                rsi: 34.79
+                ema_12: 67823.45
+                ema_26: 68234.56
+                sma_20: 68423.10
+                price_vs_sma20_pct: -1.45
+                bollinger_bands:
+                  upper: 74892.11
+                  middle: 68234.56
+                  lower: 63456.23
+                recommendation: "BUY"
+                timestamp: "2026-02-22T14:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          description: Backend unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /market-summary:
+    get:
+      operationId: getMarketSummary
+      summary: Get market summary
+      description: |
+        Overview of all 34 supported assets across crypto, forex, and commodities
+        with 24h change, volume, and market sentiment.
+      tags: [Analysis]
+      responses:
+        "200":
+          description: Market summary returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  crypto:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MarketAsset"
+                  forex:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MarketAsset"
+                  commodities:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MarketAsset"
+                  sentiment:
+                    type: object
+                    properties:
+                      overall:
+                        type: string
+                        enum: [bullish, neutral, bearish]
+                      fear_greed_index:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                  timestamp:
+                    type: string
+                    format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /confluence:
+    get:
+      operationId: getConfluence
+      summary: Get confluence score
+      description: |
+        6-layer weighted confluence score combining technical, sentiment, on-chain,
+        macro, information flow, and quantitative signals into a single actionable score.
+      tags: [Signals]
+      parameters:
+        - name: symbol
+          in: query
+          description: Asset symbol
+          schema:
+            type: string
+            default: "BTC"
+      responses:
+        "200":
+          description: Confluence score returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Confluence"
+              example:
+                symbol: "BTC"
+                confluence_score: 78
+                direction: "BULLISH"
+                layers:
+                  technical:
+                    score: 82
+                  sentiment:
+                    score: 71
+                  on_chain:
+                    score: 85
+                  macro:
+                    score: 65
+                  information_flow:
+                    score: 79
+                  quantitative:
+                    score: 88
+                timestamp: "2026-02-22T14:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /quant:
+    get:
+      operationId: getQuant
+      summary: Get fractal regime detection
+      description: |
+        Fractal regime detection using MFDFA (Multifractal Detrended Fluctuation Analysis)
+        and Hurst exponent. Use this to determine whether the market is trending,
+        mean-reverting, or in a random walk.
+      tags: [Quant]
+      parameters:
+        - name: symbol
+          in: query
+          description: Asset symbol
+          schema:
+            type: string
+            default: "BTC"
+      responses:
+        "200":
+          description: Quant data returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuantRegime"
+              example:
+                symbol: "BTC"
+                hurst_exponent: 0.62
+                regime: "trending"
+                mfdfa:
+                  alpha_min: 0.45
+                  alpha_max: 0.78
+                  width: 0.33
+                  asymmetry: 0.12
+                interpretation: "Market is in a trending regime (H > 0.5). Momentum strategies favored."
+                timestamp: "2026-02-22T14:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /indicators:
+    get:
+      operationId: getIndicators
+      summary: Get technical indicators
+      description: |
+        Pre-calculated technical indicators: RSI, MACD, Bollinger Bands, SMA, EMA,
+        ATR, ADX, OBV, and more.
+      tags: [Analysis]
+      parameters:
+        - name: symbol
+          in: query
+          description: Asset symbol
+          schema:
+            type: string
+            default: "BTC"
+        - name: range
+          in: query
+          description: Time range
+          schema:
+            type: string
+            enum: ["7d", "30d", "90d"]
+            default: "30d"
+      responses:
+        "200":
+          description: Indicators returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Indicators"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /quant/risk-metrics:
+    get:
+      operationId: getRiskMetrics
+      summary: Get risk metrics
+      description: |
+        Portfolio risk metrics including Sharpe ratio, Sortino ratio, Value at Risk (VaR),
+        Conditional VaR (CVaR), maximum drawdown, and 30-day volatility.
+      tags: [Quant]
+      parameters:
+        - name: symbol
+          in: query
+          description: Asset symbol
+          schema:
+            type: string
+            default: "BTC"
+      responses:
+        "200":
+          description: Risk metrics returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskMetrics"
+              example:
+                symbol: "BTC"
+                sharpe_ratio: 1.84
+                sortino_ratio: 2.12
+                var_95: -0.023
+                cvar_95: -0.034
+                max_drawdown: -0.12
+                volatility_30d: 0.045
+                beta: 1.0
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /quant/hurst-history:
+    get:
+      operationId: getHurstHistory
+      summary: Get Hurst exponent history
+      description: Rolling Hurst exponent timeseries for regime change detection.
+      tags: [Quant]
+      parameters:
+        - name: symbol
+          in: query
+          description: Asset symbol
+          schema:
+            type: string
+            default: "BTC"
+        - name: range
+          in: query
+          description: Time range
+          schema:
+            type: string
+            enum: ["7d", "30d", "90d"]
+            default: "30d"
+      responses:
+        "200":
+          description: Hurst history returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  symbol:
+                    type: string
+                  history:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        hurst:
+                          type: number
+                          format: double
+                        regime:
+                          type: string
+                          enum: [trending, mean_reverting, random_walk]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /quant/price-chart:
+    get:
+      operationId: getPriceChart
+      summary: Get OHLCV candle data
+      description: OHLCV candle data for charting.
+      tags: [Market Data]
+      parameters:
+        - name: symbol
+          in: query
+          description: Asset symbol
+          schema:
+            type: string
+            default: "BTC"
+        - name: interval
+          in: query
+          description: Candle interval
+          schema:
+            type: string
+            enum: ["1h", "4h", "1d"]
+            default: "1d"
+        - name: range
+          in: query
+          description: Time range
+          schema:
+            type: string
+            enum: ["7d", "30d", "90d"]
+            default: "30d"
+      responses:
+        "200":
+          description: Price chart data returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  symbol:
+                    type: string
+                  candles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Candle"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /quant/correlation:
+    get:
+      operationId: getCorrelation
+      summary: Get correlation matrix
+      description: Cross-asset correlation matrix for portfolio diversification analysis.
+      tags: [Quant]
+      parameters:
+        - name: symbols
+          in: query
+          description: Comma-separated asset symbols (2-10)
+          schema:
+            type: string
+            default: "BTC,ETH,SOL"
+        - name: range
+          in: query
+          description: Time range
+          schema:
+            type: string
+            enum: ["7d", "30d", "90d"]
+            default: "30d"
+      responses:
+        "200":
+          description: Correlation matrix returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matrix:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      additionalProperties:
+                        type: number
+                        format: double
+                  period:
+                    type: string
+              example:
+                matrix:
+                  BTC:
+                    BTC: 1.0
+                    ETH: 0.87
+                    SOL: 0.72
+                  ETH:
+                    BTC: 0.87
+                    ETH: 1.0
+                    SOL: 0.81
+                  SOL:
+                    BTC: 0.72
+                    ETH: 0.81
+                    SOL: 1.0
+                period: "30d"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /screener:
+    get:
+      operationId: getScreener
+      summary: Screen all assets
+      description: All 34 assets with key metrics, Hurst exponent, and signal at a glance.
+      tags: [Market Data]
+      responses:
+        "200":
+          description: Screener data returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assets:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScreenerAsset"
+                  total:
+                    type: integer
+                    example: 34
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /news:
+    get:
+      operationId: getNews
+      summary: Get news feed
+      description: Multi-source RSS news feed with sentiment analysis.
+      tags: [Market Data]
+      parameters:
+        - name: category
+          in: query
+          description: News category filter
+          schema:
+            type: string
+            enum: [crypto, forex, commodities, macro, all]
+            default: "all"
+      responses:
+        "200":
+          description: News articles returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NewsArticle"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /indices:
+    get:
+      operationId: getIndices
+      summary: Get global indices
+      description: Major global stock market indices with current values and daily change.
+      tags: [Market Data]
+      responses:
+        "200":
+          description: Indices returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  indices:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Index"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /backtest:
+    post:
+      operationId: runBacktest
+      summary: Run a backtest
+      description: |
+        Run a strategy backtest against historical data. Returns performance metrics
+        including total return, Sharpe ratio, max drawdown, win rate, and profit factor.
+      tags: [Backtesting]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BacktestRequest"
+            example:
+              symbol: "BTC"
+              strategy: "hurst_momentum"
+              start_date: "2025-01-01"
+              end_date: "2026-02-01"
+              initial_capital: 10000
+      responses:
+        "200":
+          description: Backtest completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BacktestResult"
+              example:
+                strategy: "hurst_momentum"
+                symbol: "BTC"
+                period:
+                  start: "2025-01-01"
+                  end: "2026-02-01"
+                results:
+                  total_return: 0.43
+                  annual_return: 0.38
+                  sharpe_ratio: 1.84
+                  max_drawdown: -0.12
+                  win_rate: 0.60
+                  total_trades: 47
+                  profit_factor: 1.92
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        Your TinkClaw API key. Format: `tinkclaw_<plan>_<32-char-hex>`.
+        Get one at [tinkclaw.com](https://tinkclaw.com).
+
+  headers:
+    X-RateLimit-Limit:
+      description: Your daily quota
+      schema:
+        type: integer
+        example: 5000
+    X-RateLimit-Remaining:
+      description: Calls remaining today
+      schema:
+        type: integer
+        example: 4823
+    X-RateLimit-Reset:
+      description: UTC time when the limit resets
+      schema:
+        type: string
+        format: date-time
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            missing_key:
+              value:
+                error: "Missing X-API-Key header"
+            invalid_key:
+              value:
+                error: "Invalid API key"
+            inactive_key:
+              value:
+                error: "API key is cancelled"
+    RateLimited:
+      description: Daily rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          $ref: "#/components/headers/X-RateLimit-Limit"
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+            example: 0
+        X-RateLimit-Reset:
+          $ref: "#/components/headers/X-RateLimit-Reset"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Rate limit exceeded"
+              reset_at:
+                type: string
+                format: date-time
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    Signal:
+      type: object
+      properties:
+        symbol:
+          type: string
+          example: "BTC"
+        signal:
+          type: string
+          enum: [BUY, SELL, HOLD]
+        confidence:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Signal strength (0-100)
+        price:
+          type: number
+          format: double
+          description: Current price at signal time
+        target:
+          type: number
+          format: double
+          description: Price target
+        stop_loss:
+          type: number
+          format: double
+          description: Suggested stop-loss level
+        rsi:
+          type: number
+          format: double
+          description: RSI-14 value
+        price_vs_sma20:
+          type: number
+          format: double
+          description: Price deviation from 20-period SMA (%)
+        timestamp:
+          type: string
+          format: date-time
+
+    MlSignal:
+      type: object
+      properties:
+        symbol:
+          type: string
+        recommendation:
+          type: string
+          enum: [BUY, SELL, HOLD]
+        confidence:
+          type: integer
+          minimum: 0
+          maximum: 100
+        source:
+          type: string
+          enum: [consensus, ml, baseline]
+          description: |
+            `consensus` — ML agrees with rule-based baseline (boosted confidence).
+            `ml` — ML override (high-confidence ML prediction).
+            `baseline` — ML unavailable, using rule-based signal only.
+        baseline:
+          type: object
+          properties:
+            signal:
+              type: string
+              enum: [BUY, SELL, HOLD]
+            confidence:
+              type: integer
+        ml:
+          nullable: true
+          type: object
+          properties:
+            prediction:
+              type: string
+              enum: [BUY, SELL, HOLD]
+            confidence:
+              type: integer
+            probabilities:
+              type: object
+              properties:
+                BUY:
+                  type: number
+                SELL:
+                  type: number
+                HOLD:
+                  type: number
+            model_accuracy:
+              type: number
+              description: Historical model accuracy (0-1)
+        price:
+          type: number
+          format: double
+        target:
+          type: number
+          format: double
+        stop_loss:
+          type: number
+          format: double
+        timestamp:
+          type: string
+          format: date-time
+
+    Analysis:
+      type: object
+      properties:
+        symbol:
+          type: string
+        current_price:
+          type: number
+          format: double
+        trend:
+          type: string
+          enum: [BULLISH, BEARISH]
+          description: "BULLISH (EMA12 > EMA26) or BEARISH (EMA12 < EMA26)"
+        support:
+          type: number
+          format: double
+          description: Lower Bollinger Band
+        resistance:
+          type: number
+          format: double
+          description: Upper Bollinger Band
+        rsi:
+          type: number
+          format: double
+        ema_12:
+          type: number
+          format: double
+        ema_26:
+          type: number
+          format: double
+        sma_20:
+          type: number
+          format: double
+        price_vs_sma20_pct:
+          type: number
+          format: double
+        bollinger_bands:
+          $ref: "#/components/schemas/BollingerBands"
+        recommendation:
+          type: string
+          enum: [STRONG BUY, BUY, HOLD, SELL, STRONG SELL]
+        timestamp:
+          type: string
+          format: date-time
+
+    BollingerBands:
+      type: object
+      properties:
+        upper:
+          type: number
+          format: double
+        middle:
+          type: number
+          format: double
+        lower:
+          type: number
+          format: double
+
+    Confluence:
+      type: object
+      properties:
+        symbol:
+          type: string
+        confluence_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: |
+            80-100: Strong signal. 60-79: Moderate. 40-59: Weak/neutral. 0-39: Contrarian.
+        direction:
+          type: string
+          enum: [BULLISH, BEARISH, NEUTRAL]
+        layers:
+          type: object
+          properties:
+            technical:
+              $ref: "#/components/schemas/LayerScore"
+            sentiment:
+              $ref: "#/components/schemas/LayerScore"
+            on_chain:
+              $ref: "#/components/schemas/LayerScore"
+            macro:
+              $ref: "#/components/schemas/LayerScore"
+            information_flow:
+              $ref: "#/components/schemas/LayerScore"
+            quantitative:
+              $ref: "#/components/schemas/LayerScore"
+        timestamp:
+          type: string
+          format: date-time
+
+    LayerScore:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    QuantRegime:
+      type: object
+      properties:
+        symbol:
+          type: string
+        hurst_exponent:
+          type: number
+          format: double
+          description: |
+            H < 0.5: mean-reverting. H = 0.5: random walk. H > 0.5: trending.
+        regime:
+          type: string
+          enum: [trending, mean_reverting, random_walk]
+        mfdfa:
+          type: object
+          properties:
+            alpha_min:
+              type: number
+              format: double
+            alpha_max:
+              type: number
+              format: double
+            width:
+              type: number
+              format: double
+            asymmetry:
+              type: number
+              format: double
+        interpretation:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    Indicators:
+      type: object
+      properties:
+        symbol:
+          type: string
+        indicators:
+          type: object
+          properties:
+            rsi_14:
+              type: number
+              format: double
+            macd:
+              type: object
+              properties:
+                value:
+                  type: number
+                  format: double
+                signal:
+                  type: number
+                  format: double
+                histogram:
+                  type: number
+                  format: double
+            bollinger:
+              $ref: "#/components/schemas/BollingerBands"
+            sma_20:
+              type: number
+              format: double
+            sma_50:
+              type: number
+              format: double
+            ema_12:
+              type: number
+              format: double
+            ema_26:
+              type: number
+              format: double
+            atr_14:
+              type: number
+              format: double
+            adx:
+              type: number
+              format: double
+            volume_sma:
+              type: number
+              format: double
+            obv:
+              type: number
+              format: double
+
+    RiskMetrics:
+      type: object
+      properties:
+        symbol:
+          type: string
+        sharpe_ratio:
+          type: number
+          format: double
+        sortino_ratio:
+          type: number
+          format: double
+        var_95:
+          type: number
+          format: double
+          description: 95th percentile Value at Risk (daily)
+        cvar_95:
+          type: number
+          format: double
+          description: Conditional VaR (expected shortfall)
+        max_drawdown:
+          type: number
+          format: double
+        volatility_30d:
+          type: number
+          format: double
+        beta:
+          type: number
+          format: double
+
+    MarketAsset:
+      type: object
+      properties:
+        symbol:
+          type: string
+        price:
+          type: number
+          format: double
+        change_24h:
+          type: number
+          format: double
+        volume:
+          type: number
+          format: double
+
+    ScreenerAsset:
+      type: object
+      properties:
+        symbol:
+          type: string
+        price:
+          type: number
+          format: double
+        change_24h:
+          type: number
+          format: double
+        rsi:
+          type: number
+          format: double
+        hurst:
+          type: number
+          format: double
+        regime:
+          type: string
+          enum: [trending, mean_reverting, random_walk]
+        signal:
+          type: string
+          enum: [BUY, SELL, HOLD]
+        confluence_score:
+          type: integer
+
+    Candle:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        open:
+          type: number
+          format: double
+        high:
+          type: number
+          format: double
+        low:
+          type: number
+          format: double
+        close:
+          type: number
+          format: double
+        volume:
+          type: number
+          format: double
+
+    NewsArticle:
+      type: object
+      properties:
+        title:
+          type: string
+        source:
+          type: string
+        url:
+          type: string
+          format: uri
+        sentiment:
+          type: string
+          enum: [positive, negative, neutral]
+        sentiment_score:
+          type: number
+          format: double
+          minimum: -1
+          maximum: 1
+        published_at:
+          type: string
+          format: date-time
+
+    Index:
+      type: object
+      properties:
+        symbol:
+          type: string
+          example: "SPX"
+        name:
+          type: string
+          example: "S&P 500"
+        value:
+          type: number
+          format: double
+        change:
+          type: number
+          format: double
+          description: Daily change (%)
+
+    BacktestRequest:
+      type: object
+      required: [symbol, strategy, start_date, end_date]
+      properties:
+        symbol:
+          type: string
+          example: "BTC"
+        strategy:
+          type: string
+          enum: [hurst_momentum, mean_reversion, ma_crossover, buy_and_hold]
+        start_date:
+          type: string
+          format: date
+          example: "2025-01-01"
+        end_date:
+          type: string
+          format: date
+          example: "2026-02-01"
+        initial_capital:
+          type: number
+          format: double
+          default: 10000
+
+    BacktestResult:
+      type: object
+      properties:
+        strategy:
+          type: string
+        symbol:
+          type: string
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date
+            end:
+              type: string
+              format: date
+        results:
+          type: object
+          properties:
+            total_return:
+              type: number
+              format: double
+            annual_return:
+              type: number
+              format: double
+            sharpe_ratio:
+              type: number
+              format: double
+            max_drawdown:
+              type: number
+              format: double
+            win_rate:
+              type: number
+              format: double
+            total_trades:
+              type: integer
+            profit_factor:
+              type: number
+              format: double

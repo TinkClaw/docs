@@ -799,32 +799,29 @@ def api_call_with_retry(url, headers, max_retries=3):
 
 ## SDKs & Libraries
 
-### ClawBot Python SDK
+### OpenAPI Specification
+
+The complete API is defined in [`openapi.yaml`](openapi.yaml) (OpenAPI 3.0). Use it to auto-generate a typed client in any language:
 
 ```bash
-pip install clawbot
+# Python
+pip install openapi-python-client
+openapi-python-client generate --url https://raw.githubusercontent.com/TinkClaw/docs/main/openapi.yaml
+
+# TypeScript
+npx openapi-typescript-codegen --input openapi.yaml --output ./tinkclaw-client
+
+# Go
+go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+oapi-codegen -package tinkclaw openapi.yaml > tinkclaw.go
+
+# Rust, Java, C#, Ruby, etc.
+npx @openapitools/openapi-generator-cli generate -i openapi.yaml -g <language> -o ./client
 ```
 
-```python
-from clawbot import TinkClawClient
+You can also import `openapi.yaml` directly into [Postman](https://www.postman.com/), [Insomnia](https://insomnia.rest/), or [Swagger UI](https://swagger.io/tools/swagger-ui/) for interactive testing.
 
-client = TinkClawClient(api_key="tinkclaw_bot_...")
-
-# Get confluence score
-confluence = client.get_confluence("BTC")
-print(f"Score: {confluence.score}, Direction: {confluence.direction}")
-
-# Get indicators with history
-indicators = client.get_indicators("ETH", range_days=30)
-print(f"RSI: {indicators.rsi_14}, MACD: {indicators.macd.value}")
-
-# Run backtest
-results = client.backtest("BTC", strategy="hurst_momentum",
-                          start="2025-01-01", end="2026-02-01")
-print(f"Return: {results.total_return:.1%}, Sharpe: {results.sharpe_ratio:.2f}")
-```
-
-More SDKs coming soon. In the meantime, the REST API works with any HTTP client.
+The REST API works with any HTTP client — no SDK required. See the [integration examples](#integration-examples) below.
 
 ---
 
