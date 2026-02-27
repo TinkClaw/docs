@@ -1035,7 +1035,30 @@ All endpoints are served via global edge caching. Confluence and indicators are 
 Currently 4 built-in strategies are available. Custom strategy support is on the roadmap. Enterprise customers can request early access.
 
 **Do you offer refunds?**
-Yes, 14-day money-back guarantee on all paid plans.
+No cash refunds are issued. You may cancel your subscription at any time — your access continues until the end of your current billing period. Any unused portion is converted to API credit, which is automatically applied if you resubscribe within 12 months. See the Cancellation & Billing Policy below for details.
+
+**What happens when I cancel?**
+Your API key remains active until the end of the current billing cycle. After that, it downgrades to the free Explorer tier (100 requests/day). No data is deleted.
+
+---
+
+## Cancellation & Billing Policy
+
+**Effective: February 27, 2026**
+
+1. **No Cash Refunds** — All payments are final and non-refundable once processed. By subscribing, you acknowledge that you are purchasing immediate access to a digital service.
+
+2. **Cancel Anytime** — You may cancel your subscription at any time by contacting api@tinkclaw.com. Cancellation takes effect at the end of your current billing period — you retain full access until then.
+
+3. **Prorated API Credit** — When you cancel mid-cycle, the unused portion of your subscription is calculated on a daily pro-rata basis and issued as API credit to your account. Credits are non-transferable and expire 12 months from the date of issuance.
+
+4. **Credit Application** — API credits are automatically applied to your next subscription payment if you resubscribe within the 12-month validity window. Credits cannot be redeemed for cash.
+
+5. **Free Tier Downgrade** — After your paid billing period ends, your API key automatically downgrades to the Explorer tier (100 requests/day). Your usage history and data remain intact.
+
+6. **Billing Cycle** — Subscriptions are billed monthly from the date of activation. There are no annual commitments or long-term contracts.
+
+7. **Disputes** — If you believe you were charged in error, contact api@tinkclaw.com within 30 days of the charge. We will investigate and resolve billing disputes promptly.
 
 ---
 
