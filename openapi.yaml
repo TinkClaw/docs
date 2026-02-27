@@ -21,7 +21,7 @@ info:
     | Enterprise | Unlimited | Custom |
 
     Annual billing: 20% off ($23/mo for Pro). No credit card required for Free tier.
-  version: 1.4.0
+  version: 1.5.0
   contact:
     name: TinkClaw Support
     url: https://tinkclaw.com
@@ -51,7 +51,7 @@ tags:
   - name: Webhooks
     description: Subscribe to price, confluence, and RSI alerts
   - name: Account
-    description: API key usage and account info
+    description: API key usage, info, and rotation
 
 paths:
   /signals:
@@ -825,6 +825,89 @@ paths:
                   reset_at:
                     type: string
                     format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api-keys/info:
+    get:
+      operationId: getKeyInfo
+      summary: Get API key info
+      description: |
+        Returns metadata about your API key including plan, status, daily usage,
+        remaining quota, and key prefix.
+      tags: [Account]
+      responses:
+        "200":
+          description: Key info returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key_prefix:
+                    type: string
+                    example: "tinkclaw_free_a8"
+                  plan:
+                    type: string
+                    example: "free"
+                  status:
+                    type: string
+                    enum: [active, deprecated]
+                    example: "active"
+                  created_at:
+                    type: integer
+                    example: 1771951188186
+                  daily_limit:
+                    oneOf:
+                      - type: integer
+                      - type: string
+                    example: 500
+                  used_today:
+                    type: integer
+                    example: 18
+                  remaining:
+                    oneOf:
+                      - type: integer
+                      - type: string
+                    example: 482
+                  reset_at:
+                    type: string
+                    format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api-keys/rotate:
+    post:
+      operationId: rotateKey
+      summary: Rotate API key
+      description: |
+        Generates a new API key with the same plan and metadata. The old key
+        remains valid for 24 hours (grace period). Webhook subscriptions are
+        automatically migrated to the new key.
+
+        **Important**: Save the new `api_key` from the response immediately —
+        it is only returned once.
+      tags: [Account]
+      responses:
+        "200":
+          description: New key issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  api_key:
+                    type: string
+                    example: "tinkclaw_free_de56886c978a4e3096bc2e66fb8a8a25"
+                  plan:
+                    type: string
+                    example: "free"
+                  message:
+                    type: string
+                    example: "New API key issued. Old key will remain active for 24 hours."
         "401":
           $ref: "#/components/responses/Unauthorized"
 

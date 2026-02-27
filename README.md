@@ -34,6 +34,8 @@ TinkClaw delivers fractal regime detection, information flow analysis, and multi
    - [Webhook Subscribe](#post-v1webhookssubscribe)
    - [Webhook List](#get-v1webhooks)
    - [Usage Stats](#get-v1usage)
+   - [Key Info](#get-v1api-keysinfo)
+   - [Key Rotation](#post-v1api-keysrotate)
 5. [Edge Caching](#edge-caching)
 6. [Integration Examples](#integration-examples)
 7. [Error Handling](#error-handling)
@@ -696,6 +698,50 @@ Your API key usage stats and remaining quota.
 
 ---
 
+### `GET /v1/api-keys/info`
+
+Get metadata about your API key: plan, status, daily usage, and remaining quota.
+
+**Response**
+
+```json
+{
+  "key_prefix": "tinkclaw_free_a8",
+  "plan": "free",
+  "status": "active",
+  "created_at": 1771951188186,
+  "daily_limit": 500,
+  "used_today": 18,
+  "remaining": 482,
+  "reset_at": "2026-02-28T00:00:00.000Z"
+}
+```
+
+**Status Values**: `active` | `deprecated` (within 24h rotation grace period)
+
+---
+
+### `POST /v1/api-keys/rotate`
+
+Rotate your API key. Generates a new key with the same plan and metadata. The old key remains valid for **24 hours** to give you time to update your integrations.
+
+**Request**: No body required. Authenticates with your current `X-API-Key`.
+
+**Response**
+
+```json
+{
+  "success": true,
+  "api_key": "tinkclaw_free_de56886c978a4e3096bc2e66fb8a8a25",
+  "plan": "free",
+  "message": "New API key issued. Old key will remain active for 24 hours."
+}
+```
+
+**Important**: Save the new `api_key` immediately — it is only returned once. Update your bot configuration within 24 hours.
+
+---
+
 ## Edge Caching
 
 All GET endpoints are served via Cloudflare's global edge network. Responses are cached per-region for ultra-low latency.
@@ -877,7 +923,7 @@ if __name__ == "__main__":
 |--------|---------|--------|
 | `200` | Success | Parse response body |
 | `401` | Invalid or missing API key | Check your `X-API-Key` header |
-| `403` | Key is inactive/cancelled | Renew subscription at tinkclaw.com |
+| `403` | Forbidden | Endpoint requires a higher plan |
 | `429` | Rate limit exceeded | Wait until `reset_at` time |
 | `500` | Server error | Retry with exponential backoff |
 | `503` | Backend unavailable | Retry after 30 seconds |
@@ -907,6 +953,33 @@ def api_call_with_retry(url, headers, max_retries=3):
 ---
 
 ## SDKs & Libraries
+
+### Python SDK (Official)
+
+```bash
+pip install tinkclaw
+```
+
+```python
+from tinkclaw import TinkClawClient
+
+client = TinkClawClient(api_key="tinkclaw_free_YOUR_KEY")
+
+# Get trading signals
+signals = client.get_signals(["BTC", "ETH"])
+for s in signals:
+    print(f"{s['symbol']}: {s['signal']} ({s['confidence']}%)")
+
+# Check key info
+info = client.key_info()
+print(f"Plan: {info['plan']}, Remaining: {info['remaining']}")
+
+# Rotate key (old key valid for 24h)
+result = client.rotate_key()
+new_client = TinkClawClient(api_key=result['api_key'])
+```
+
+Full docs: [pypi.org/project/tinkclaw](https://pypi.org/project/tinkclaw/) | [GitHub](https://github.com/TinkClaw/tinkclaw-python)
 
 ### OpenAPI Specification
 
