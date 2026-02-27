@@ -50,7 +50,7 @@ Get your first signal in under 60 seconds.
 
 ### 1. Get an API Key
 
-Sign up at [tinkclaw.com](https://tinkclaw.com) — the Free tier gives you 500 calls/day, no credit card required.
+Sign up at [tinkclaw.com](https://tinkclaw.com) — the Explorer tier gives you 100 requests/day, no credit card required.
 
 ### 2. Make Your First Request
 
@@ -102,17 +102,18 @@ Keys follow the format `tinkclaw_<plan>_<32-char-hex>`. Your key is generated au
 
 | Plan | Daily Limit | Price | Best For |
 |------|------------|-------|----------|
-| **Free** | 500 | $0 | Testing & prototyping |
-| **Pro** | 50,000 | $29/mo | Production bots & multi-strategy |
+| **Explorer** | 100 | $0 | Testing & prototyping |
+| **Builder** | 5,000 | $29/mo | Production bots & single-strategy |
+| **Pro** | 50,000 | $99/mo | Multi-strategy & high-volume |
 | **Enterprise** | Unlimited | Custom | Institutional & white-label |
 
-Annual billing: 20% off ($23/mo for Pro). No credit card required for Free tier.
+Annual billing: 20% off ($79/mo for Pro, $23/mo for Builder). No credit card required for Explorer tier.
 
 Rate limits reset at **midnight UTC** daily. Every response includes headers to track your usage and cache status:
 
 ```
-X-RateLimit-Limit: 500
-X-RateLimit-Remaining: 482
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 82
 X-RateLimit-Reset: 2026-02-24T00:00:00Z
 X-Cache: HIT
 ```

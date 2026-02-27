@@ -16,11 +16,12 @@ info:
 
     | Plan | Daily Limit | Price |
     |------|------------|-------|
-    | Free | 500 | $0 |
-    | Pro | 50,000 | $29/mo |
+    | Explorer | 100 | $0 |
+    | Builder | 5,000 | $29/mo |
+    | Pro | 50,000 | $99/mo |
     | Enterprise | Unlimited | Custom |
 
-    Annual billing: 20% off ($23/mo for Pro). No credit card required for Free tier.
+    Annual billing: 20% off ($79/mo for Pro, $23/mo for Builder). No credit card required for Explorer tier.
   version: 1.5.0
   contact:
     name: TinkClaw Support
