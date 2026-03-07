@@ -581,7 +581,7 @@ Run a backtest with built-in or custom strategies against historical data.
 
 ### `GET /v1/confluence`
 
-6-layer weighted confluence score combining technical, sentiment, on-chain, macro, information flow, and quantitative signals. Includes ATR-based volatility bands. Supports batch queries.
+6-layer weighted confluence score combining technical, fundamental, macro, flow, quantitative, and cross-asset signals. Includes ATR-based volatility bands. Supports batch queries.
 
 **Parameters**
 
@@ -1027,7 +1027,7 @@ GOLD, SILVER, OIL, NATGAS, COPPER, WHEAT
 No. TinkClaw provides quantitative analysis and data for informational purposes only. Always do your own research.
 
 **What data sources do you use?**
-We use a proprietary multi-source pipeline to compute indicators, sentiment, and on-chain metrics.
+We use a proprietary multi-source pipeline to compute indicators and market intelligence across technical, fundamental, and quantitative dimensions.
 
 **How fresh is the data?**
 All endpoints are served via global edge caching. Confluence and indicators are cached for 30 seconds, quant and risk data for 60 seconds. Check the `X-Cache` response header (`HIT` = served from edge, `MISS` = fresh from backend).

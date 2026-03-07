@@ -302,8 +302,8 @@ paths:
       operationId: getConfluence
       summary: Get confluence score
       description: |
-        6-layer weighted confluence score combining technical, sentiment, on-chain,
-        macro, information flow, and quantitative signals into a single actionable score.
+        6-layer weighted confluence score combining technical, fundamental, macro,
+        flow, quantitative, and cross-asset signals into a single actionable score.
         Includes ATR-based volatility bands. Supports batch queries with `symbols`.
       tags: [Signals]
       parameters:
