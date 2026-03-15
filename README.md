@@ -50,7 +50,7 @@ Get your first signal in under 60 seconds.
 
 ### 1. Get an API Key
 
-Sign up at [tinkclaw.com](https://tinkclaw.com) — SmartChart access is free. Pro plan ($9.99/mo) required for API access.
+Sign up at [tinkclaw.com](https://tinkclaw.com) — the Sandbox tier gives you 100 credits/month, no credit card required.
 
 ### 2. Make Your First Request
 
@@ -75,8 +75,8 @@ curl -H "X-API-Key: YOUR_KEY" \
       "timestamp": "2026-02-22T14:30:00Z"
     }
   ],
-  "plan": "pro",
-  "calls_remaining": 32
+  "plan": "developer",
+  "credits_remaining": 4982
 }
 ```
 
@@ -89,7 +89,7 @@ That's it. You now have actionable signals flowing into your bot.
 All API requests require an `X-API-Key` header.
 
 ```
-X-API-Key: YOUR_API_KEY_HERE
+X-API-Key: tinkclaw_dev_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
 ```
 
 Keys follow the format `tinkclaw_<plan>_<32-char-hex>`. Your key is generated automatically after checkout and can be retrieved from your dashboard.
@@ -100,20 +100,19 @@ Keys follow the format `tinkclaw_<plan>_<32-char-hex>`. Your key is generated au
 
 ## Rate Limits
 
-| Plan | Daily Limit | Price | Best For |
-|------|------------|-------|----------|
-| **Free** | No API | $0 | SmartChart access, exploring signals |
-| **Pro** | 50 | $9.99/mo | Trading bots & API integrations |
-| **Pro+** | 100 | $19.99/mo | Multi-strategy & higher volume |
+| Plan | Monthly Credits | Price | Best For |
+|------|----------------|-------|----------|
+| **Sandbox** | 100 | $0 | Testing & prototyping |
+| **Developer** | 5,000 | $29/mo | Production bots & single-strategy |
+| **Pro** | 15,000 | $79/mo | Multi-strategy & high-volume |
+| **Commercial** | 50,000 | $299/mo | Institutional & white-label |
 
-No credit card required for the free tier.
-
-Rate limits reset at **midnight UTC** daily. Every response includes headers to track your usage and cache status:
+No credit card required for Sandbox tier. Every response includes headers to track your usage and cache status:
 
 ```
-X-RateLimit-Limit: 50
-X-RateLimit-Remaining: 32
-X-RateLimit-Reset: 2026-02-24T00:00:00Z
+X-RateLimit-Limit: 5000
+X-RateLimit-Remaining: 4982
+X-RateLimit-Reset: 2026-03-01T00:00:00Z
 X-Cache: HIT
 ```
 
@@ -122,7 +121,7 @@ When you exceed your limit, you'll receive a `429` response:
 ```json
 {
   "error": "Rate limit exceeded",
-  "reset_at": "2026-02-23T00:00:00Z"
+  "reset_at": "2026-03-01T00:00:00Z"
 }
 ```
 
@@ -158,8 +157,8 @@ Trading signals based on technical indicators (RSI, SMA, price action).
       "data_source": "tinkclaw-quant"
     }
   ],
-  "plan": "pro",
-  "calls_remaining": 32,
+  "plan": "developer",
+  "credits_remaining": 4982,
   "disclaimer": "Technical indicators for informational use. Not financial advice."
 }
 ```
@@ -260,7 +259,7 @@ Detailed technical analysis including trend, support/resistance, Bollinger Bands
 
 ### `GET /v1/market-summary`
 
-Overview of all 34 supported assets across crypto, forex, and commodities with sentiment data.
+Overview of all 60+ supported assets across stocks, crypto, forex, and commodities with sentiment data.
 
 **Response**
 
@@ -468,7 +467,7 @@ Cross-asset correlation matrix.
 
 ### `GET /v1/screener`
 
-All 34 assets with key metrics and Hurst exponent at a glance.
+All 60+ assets with key metrics and Hurst exponent at a glance.
 
 **Response**
 
@@ -486,7 +485,7 @@ All 34 assets with key metrics and Hurst exponent at a glance.
       "confluence_score": 78
     }
   ],
-  "total": 34
+  "total": 60
 }
 ```
 
@@ -580,7 +579,7 @@ Run a backtest with built-in or custom strategies against historical data.
 
 ### `GET /v1/confluence`
 
-6-layer weighted confluence score combining technical, fundamental, macro, flow, quantitative, and cross-asset signals. Includes ATR-based volatility bands. Supports batch queries.
+6-layer weighted confluence score combining technical, sentiment, on-chain, macro, information flow, and quantitative signals. Includes ATR-based volatility bands. Supports batch queries.
 
 **Parameters**
 
@@ -688,11 +687,11 @@ Your API key usage stats and remaining quota.
 
 ```json
 {
-  "plan": "pro",
-  "daily_limit": 50,
-  "calls_today": 18,
-  "calls_remaining": 32,
-  "reset_at": "2026-02-24T00:00:00Z"
+  "plan": "developer",
+  "monthly_limit": 5000,
+  "calls_this_month": 18,
+  "calls_remaining": 4982,
+  "reset_at": "2026-04-01T00:00:00Z"
 }
 ```
 
@@ -706,14 +705,14 @@ Get metadata about your API key: plan, status, daily usage, and remaining quota.
 
 ```json
 {
-  "key_prefix": "tc_a8",
-  "plan": "pro",
+  "key_prefix": "tinkclaw_dev_a8",
+  "plan": "developer",
   "status": "active",
   "created_at": 1771951188186,
-  "daily_limit": 50,
-  "used_today": 18,
-  "remaining": 32,
-  "reset_at": "2026-02-28T00:00:00.000Z"
+  "monthly_limit": 5000,
+  "used_this_month": 18,
+  "remaining": 4982,
+  "reset_at": "2026-04-01T00:00:00.000Z"
 }
 ```
 
@@ -732,8 +731,8 @@ Rotate your API key. Generates a new key with the same plan and metadata. The ol
 ```json
 {
   "success": true,
-  "api_key": "tc_de56886c978a4e3096bc2e66fb8a8a25",
-  "plan": "pro",
+  "api_key": "tinkclaw_dev_de56886c978a4e3096bc2e66fb8a8a25",
+  "plan": "free",
   "message": "New API key issued. Old key will remain active for 24 hours."
 }
 ```
@@ -768,7 +767,7 @@ Edge caching is automatic — no configuration needed. All tiers get the same ca
 ```python
 import requests
 
-API_KEY = "YOUR_API_KEY_HERE"
+API_KEY = "tinkclaw_dev_YOUR_KEY_HERE"
 BASE_URL = "https://api.tinkclaw.com/v1"
 
 headers = {"X-API-Key": API_KEY}
@@ -793,7 +792,7 @@ print(f"Calls remaining today: {remaining}")
 ### Node.js
 
 ```javascript
-const API_KEY = "YOUR_API_KEY_HERE";
+const API_KEY = "tinkclaw_dev_YOUR_KEY_HERE";
 const BASE_URL = "https://api.tinkclaw.com/v1";
 
 async function getSignals(symbols = "BTC,ETH") {
@@ -833,7 +832,7 @@ import (
 )
 
 const (
-    apiKey  = "YOUR_API_KEY_HERE"
+    apiKey  = "tinkclaw_dev_YOUR_KEY_HERE"
     baseURL = "https://api.tinkclaw.com/v1"
 )
 
@@ -876,7 +875,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tinkclaw-bot")
 
-API_KEY = "YOUR_API_KEY_HERE"
+API_KEY = "tinkclaw_dev_YOUR_KEY_HERE"
 BASE = "https://api.tinkclaw.com/v1"
 HEADERS = {"X-API-Key": API_KEY}
 WATCHLIST = "BTC,ETH,SOL"
@@ -963,7 +962,7 @@ pip install tinkclaw
 ```python
 from tinkclaw import TinkClawClient
 
-client = TinkClawClient(api_key="YOUR_API_KEY_HERE")
+client = TinkClawClient(api_key="tinkclaw_dev_YOUR_KEY")
 
 # Get trading signals
 signals = client.get_signals(["BTC", "ETH"])
@@ -1007,16 +1006,19 @@ The REST API works with any HTTP client — no SDK required. See the [integratio
 
 ---
 
-## Supported Assets (34)
+## Supported Assets (60+)
 
-### Crypto (20)
-BTC, ETH, SOL, ADA, DOT, AVAX, MATIC, LINK, UNI, ATOM, XRP, BNB, DOGE, SHIB, LTC, BCH, XLM, ALGO, FTM, NEAR
+### Stocks
+AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA, XOM, JPM, GS, BA, NFLX, V, and more
 
-### Forex (8)
-EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, NZD/USD, USD/CHF, EUR/GBP
+### Crypto
+BTC, ETH, SOL, BNB, XRP, ADA, DOT, AVAX, MATIC, LINK, UNI, ATOM, DOGE, SHIB, LTC, and more
 
-### Commodities (6)
-GOLD, SILVER, OIL, NATGAS, COPPER, WHEAT
+### Forex
+EURUSD, GBPUSD, USDJPY, AUDUSD, NZDUSD, USDCAD, USDCHF, EURJPY, EURGBP, GBPJPY
+
+### Commodities & Index
+XAUUSD, XAGUSD, USOILUSD, UKOILUSD, US500USD
 
 ---
 
@@ -1026,7 +1028,7 @@ GOLD, SILVER, OIL, NATGAS, COPPER, WHEAT
 No. TinkClaw provides quantitative analysis and data for informational purposes only. Always do your own research.
 
 **What data sources do you use?**
-We use a proprietary multi-source pipeline to compute indicators and market intelligence across technical, fundamental, and quantitative dimensions.
+We use a proprietary multi-source pipeline to compute indicators, sentiment, and on-chain metrics.
 
 **How fresh is the data?**
 All endpoints are served via global edge caching. Confluence and indicators are cached for 30 seconds, quant and risk data for 60 seconds. Check the `X-Cache` response header (`HIT` = served from edge, `MISS` = fresh from backend).
@@ -1038,7 +1040,7 @@ Currently 4 built-in strategies are available. Custom strategy support is on the
 No cash refunds are issued. You may cancel your subscription at any time — your access continues until the end of your current billing period. Any unused portion is converted to API credit, which is automatically applied if you resubscribe within 12 months. See the Cancellation & Billing Policy below for details.
 
 **What happens when I cancel?**
-Your API key remains active until the end of the current billing cycle. After that, API access is removed (free tier has no API). Your SmartChart access and data remain intact.
+Your API key remains active until the end of the current billing cycle. After that, it downgrades to the free Sandbox tier (100 credits/month). No data is deleted.
 
 ---
 
@@ -1054,7 +1056,7 @@ Your API key remains active until the end of the current billing cycle. After th
 
 4. **Credit Application** — API credits are automatically applied to your next subscription payment if you resubscribe within the 12-month validity window. Credits cannot be redeemed for cash.
 
-5. **Free Tier Downgrade** — After your paid billing period ends, API access is removed (free tier has no API). Your SmartChart access, usage history, and data remain intact.
+5. **Free Tier Downgrade** — After your paid billing period ends, your API key automatically downgrades to the Sandbox tier (100 credits/month). Your usage history and data remain intact.
 
 6. **Billing Cycle** — Subscriptions are billed monthly from the date of activation. There are no annual commitments or long-term contracts.
 
