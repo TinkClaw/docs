@@ -50,7 +50,7 @@ Get your first signal in under 60 seconds.
 
 ### 1. Get an API Key
 
-Sign up at [tinkclaw.com](https://tinkclaw.com) — the Explorer tier gives you 100 requests/day, no credit card required.
+Sign up at [tinkclaw.com](https://tinkclaw.com) — SmartChart access is free. Pro plan ($9.99/mo) required for API access.
 
 ### 2. Make Your First Request
 
@@ -75,8 +75,8 @@ curl -H "X-API-Key: YOUR_KEY" \
       "timestamp": "2026-02-22T14:30:00Z"
     }
   ],
-  "plan": "free",
-  "calls_remaining": 499
+  "plan": "pro",
+  "calls_remaining": 32
 }
 ```
 
@@ -89,7 +89,7 @@ That's it. You now have actionable signals flowing into your bot.
 All API requests require an `X-API-Key` header.
 
 ```
-X-API-Key: tinkclaw_free_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
+X-API-Key: YOUR_API_KEY_HERE
 ```
 
 Keys follow the format `tinkclaw_<plan>_<32-char-hex>`. Your key is generated automatically after checkout and can be retrieved from your dashboard.
@@ -102,18 +102,17 @@ Keys follow the format `tinkclaw_<plan>_<32-char-hex>`. Your key is generated au
 
 | Plan | Daily Limit | Price | Best For |
 |------|------------|-------|----------|
-| **Explorer** | 100 | $0 | Testing & prototyping |
-| **Builder** | 5,000 | $29/mo | Production bots & single-strategy |
-| **Pro** | 50,000 | $99/mo | Multi-strategy & high-volume |
-| **Enterprise** | Unlimited | Custom | Institutional & white-label |
+| **Free** | No API | $0 | SmartChart access, exploring signals |
+| **Pro** | 50 | $9.99/mo | Trading bots & API integrations |
+| **Pro+** | 100 | $19.99/mo | Multi-strategy & higher volume |
 
-Annual billing: 20% off ($79/mo for Pro, $23/mo for Builder). No credit card required for Explorer tier.
+No credit card required for the free tier.
 
 Rate limits reset at **midnight UTC** daily. Every response includes headers to track your usage and cache status:
 
 ```
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 82
+X-RateLimit-Limit: 50
+X-RateLimit-Remaining: 32
 X-RateLimit-Reset: 2026-02-24T00:00:00Z
 X-Cache: HIT
 ```
@@ -159,8 +158,8 @@ Trading signals based on technical indicators (RSI, SMA, price action).
       "data_source": "tinkclaw-quant"
     }
   ],
-  "plan": "free",
-  "calls_remaining": 499,
+  "plan": "pro",
+  "calls_remaining": 32,
   "disclaimer": "Technical indicators for informational use. Not financial advice."
 }
 ```
@@ -689,10 +688,10 @@ Your API key usage stats and remaining quota.
 
 ```json
 {
-  "plan": "free",
-  "daily_limit": 500,
+  "plan": "pro",
+  "daily_limit": 50,
   "calls_today": 18,
-  "calls_remaining": 482,
+  "calls_remaining": 32,
   "reset_at": "2026-02-24T00:00:00Z"
 }
 ```
@@ -707,13 +706,13 @@ Get metadata about your API key: plan, status, daily usage, and remaining quota.
 
 ```json
 {
-  "key_prefix": "tinkclaw_free_a8",
-  "plan": "free",
+  "key_prefix": "tc_a8",
+  "plan": "pro",
   "status": "active",
   "created_at": 1771951188186,
-  "daily_limit": 500,
+  "daily_limit": 50,
   "used_today": 18,
-  "remaining": 482,
+  "remaining": 32,
   "reset_at": "2026-02-28T00:00:00.000Z"
 }
 ```
@@ -733,8 +732,8 @@ Rotate your API key. Generates a new key with the same plan and metadata. The ol
 ```json
 {
   "success": true,
-  "api_key": "tinkclaw_free_de56886c978a4e3096bc2e66fb8a8a25",
-  "plan": "free",
+  "api_key": "tc_de56886c978a4e3096bc2e66fb8a8a25",
+  "plan": "pro",
   "message": "New API key issued. Old key will remain active for 24 hours."
 }
 ```
@@ -769,7 +768,7 @@ Edge caching is automatic — no configuration needed. All tiers get the same ca
 ```python
 import requests
 
-API_KEY = "tinkclaw_free_YOUR_KEY_HERE"
+API_KEY = "YOUR_API_KEY_HERE"
 BASE_URL = "https://api.tinkclaw.com/v1"
 
 headers = {"X-API-Key": API_KEY}
@@ -794,7 +793,7 @@ print(f"Calls remaining today: {remaining}")
 ### Node.js
 
 ```javascript
-const API_KEY = "tinkclaw_free_YOUR_KEY_HERE";
+const API_KEY = "YOUR_API_KEY_HERE";
 const BASE_URL = "https://api.tinkclaw.com/v1";
 
 async function getSignals(symbols = "BTC,ETH") {
@@ -834,7 +833,7 @@ import (
 )
 
 const (
-    apiKey  = "tinkclaw_free_YOUR_KEY_HERE"
+    apiKey  = "YOUR_API_KEY_HERE"
     baseURL = "https://api.tinkclaw.com/v1"
 )
 
@@ -877,7 +876,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tinkclaw-bot")
 
-API_KEY = "tinkclaw_free_YOUR_KEY_HERE"
+API_KEY = "YOUR_API_KEY_HERE"
 BASE = "https://api.tinkclaw.com/v1"
 HEADERS = {"X-API-Key": API_KEY}
 WATCHLIST = "BTC,ETH,SOL"
@@ -964,7 +963,7 @@ pip install tinkclaw
 ```python
 from tinkclaw import TinkClawClient
 
-client = TinkClawClient(api_key="tinkclaw_free_YOUR_KEY")
+client = TinkClawClient(api_key="YOUR_API_KEY_HERE")
 
 # Get trading signals
 signals = client.get_signals(["BTC", "ETH"])
@@ -1039,7 +1038,7 @@ Currently 4 built-in strategies are available. Custom strategy support is on the
 No cash refunds are issued. You may cancel your subscription at any time — your access continues until the end of your current billing period. Any unused portion is converted to API credit, which is automatically applied if you resubscribe within 12 months. See the Cancellation & Billing Policy below for details.
 
 **What happens when I cancel?**
-Your API key remains active until the end of the current billing cycle. After that, it downgrades to the free Explorer tier (100 requests/day). No data is deleted.
+Your API key remains active until the end of the current billing cycle. After that, API access is removed (free tier has no API). Your SmartChart access and data remain intact.
 
 ---
 
@@ -1055,7 +1054,7 @@ Your API key remains active until the end of the current billing cycle. After th
 
 4. **Credit Application** — API credits are automatically applied to your next subscription payment if you resubscribe within the 12-month validity window. Credits cannot be redeemed for cash.
 
-5. **Free Tier Downgrade** — After your paid billing period ends, your API key automatically downgrades to the Explorer tier (100 requests/day). Your usage history and data remain intact.
+5. **Free Tier Downgrade** — After your paid billing period ends, API access is removed (free tier has no API). Your SmartChart access, usage history, and data remain intact.
 
 6. **Billing Cycle** — Subscriptions are billed monthly from the date of activation. There are no annual commitments or long-term contracts.
 
