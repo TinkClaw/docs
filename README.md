@@ -23,7 +23,7 @@ TinkClaw delivers fractal regime detection, information flow analysis, and multi
    - [Quantitative Analysis](#get-v1quant)
    - [Technical Indicators](#get-v1indicators)
    - [Risk Metrics](#get-v1quantrisk-metrics)
-   - [Hurst History](#get-v1quanthurst-history)
+   - [Trend Persistence History](#get-v1quanthurst-history)
    - [Price Charts](#get-v1quantprice-chart)
    - [Correlation Matrix](#get-v1quantcorrelation)
    - [Asset Screener](#get-v1screener)
@@ -287,7 +287,7 @@ Overview of all 60+ supported assets across stocks, crypto, forex, and commoditi
 
 ### `GET /v1/quant`
 
-Fractal regime detection using MFDFA (Multifractal Detrended Fluctuation Analysis) and Hurst exponent.
+Fractal regime detection and trend persistence analysis.
 
 **Parameters**
 
@@ -300,23 +300,21 @@ Fractal regime detection using MFDFA (Multifractal Detrended Fluctuation Analysi
 ```json
 {
   "symbol": "BTC",
-  "hurst_exponent": 0.62,
+  "trend_persistence": 0.62,
   "regime": "trending",
-  "mfdfa": {
-    "alpha_min": 0.45,
-    "alpha_max": 0.78,
+  "fractal": {
     "width": 0.33,
     "asymmetry": 0.12
   },
-  "interpretation": "Market is in a trending regime (H > 0.5). Momentum strategies favored.",
+  "interpretation": "Market is in a trending regime. Momentum strategies favored.",
   "timestamp": "2026-02-22T14:30:00Z"
 }
 ```
 
-**Hurst Exponent Interpretation**:
-- `H < 0.5` — Mean-reverting (range-bound strategies)
-- `H = 0.5` — Random walk (no clear edge)
-- `H > 0.5` — Trending (momentum strategies)
+**Trend Persistence Interpretation**:
+- `< 0.5` — Mean-reverting (range-bound strategies)
+- `= 0.5` — Random walk (no clear edge)
+- `> 0.5` — Trending (momentum strategies)
 
 ---
 
@@ -383,7 +381,7 @@ Portfolio risk metrics: Sharpe, Sortino, VaR, CVaR, and maximum drawdown.
 
 ### `GET /v1/quant/hurst-history`
 
-Rolling Hurst exponent timeseries for regime change detection.
+Rolling trend persistence timeseries for regime change detection.
 
 **Parameters**
 
@@ -467,7 +465,7 @@ Cross-asset correlation matrix.
 
 ### `GET /v1/screener`
 
-All 60+ assets with key metrics and Hurst exponent at a glance.
+All 60+ assets with key metrics and trend persistence at a glance.
 
 **Response**
 
@@ -579,7 +577,7 @@ Run a backtest with built-in or custom strategies against historical data.
 
 ### `GET /v1/confluence`
 
-6-layer weighted confluence score combining technical, sentiment, on-chain, macro, information flow, and quantitative signals. Includes ATR-based volatility bands. Supports batch queries.
+Multi-factor weighted confluence score combining independent analytical dimensions into a single directional view. Includes ATR-based volatility bands. Supports batch queries.
 
 **Parameters**
 
@@ -597,13 +595,13 @@ Run a backtest with built-in or custom strategies against historical data.
   "score_band": { "low": 83, "high": 91 },
   "volatility": "moderate",
   "atr_pct": 2.14,
-  "layers": {
+  "dimensions": {
     "technical": 90,
-    "sentiment": 82,
-    "on_chain": 88,
+    "fundamental": 82,
     "macro": 85,
     "flow": 91,
-    "quant": 86
+    "quantitative": 86,
+    "cross_asset": 78
   },
   "recommendation": "STRONG BUY",
   "timestamp": "2026-02-23T12:00:00.000Z"
@@ -1077,7 +1075,7 @@ Your Bot
          │
          ▼
 ┌──────────────────┐
-│  Quant Engine     │  ← MFDFA, indicators, confluence
+│  Quant Engine     │  ← Indicators, confluence, regime
 └────────┬─────────┘
          │
          ▼
