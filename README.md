@@ -729,7 +729,7 @@ Rotate your API key. Generates a new key with the same plan and metadata. The ol
 ```json
 {
   "success": true,
-  "api_key": "tinkclaw_dev_de56886c978a4e3096bc2e66fb8a8a25",
+  "api_key": "tinkclaw_dev_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
   "plan": "free",
   "message": "New API key issued. Old key will remain active for 24 hours."
 }
